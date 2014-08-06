@@ -1,7 +1,14 @@
 ---
 name: gatk
-command: xxx
+command: gatk
 parameters:
-  -placeholder: 'commands'
-  --placehold-switch:
+  -T 'UnifiedGenotyper'
+  -R ''
+  -I ''
+  -nt '6'
+  --dbsnp 'dbsnp.vcf'
+  -stand_call_conf '30'
+  -stand_emit_conf 10
+  -o: 'commands'
 
+# 
