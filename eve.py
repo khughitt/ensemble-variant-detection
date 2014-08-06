@@ -6,6 +6,7 @@ import glob
 import logging
 import argparse
 import datetime
+import platform
 from eve import detectors,mappers
 
 class EVE(object):
@@ -19,9 +20,10 @@ class EVE(object):
 
         # initialize logger
         self.initialize_logger()
+        self.log_system_info()
 
         # load mapper
-        if args.input_type == 'fastq':
+        if self.args.input_type == 'fastq':
             self.mapper = mappers.BWAMapper()
 
         # load detectors
@@ -44,8 +46,8 @@ class EVE(object):
 
     def initialize_logger(self):
         """Initializes a logger instance"""
-        logging.basicConfig(level=logging.INFO,
-                format='%(asctime)s [%(levelname)s] %(message)s',
+        logging.basicConfig(level=logging.DEBUG,
+                format='(%(asctime)s)[%(levelname)s] %(message)s',
                 filename=os.path.join(self.working_dir, 'eve.log'))
 
         # log to console as well
@@ -61,10 +63,73 @@ class EVE(object):
         # add the handler to the root logger
         logging.getLogger('').addHandler(console)
 
+    def log_system_info(self):
+        """Prints system information to the log.
+           Code adapted from the SunPy project."""
+        # EVE version
+        from eve import __version__ as eve_version
+        logging.info("Starting EVE %s" % eve_version)
+
+        # Time
+        now = datetime.datetime.utcnow().strftime("%A, %d. %B %Y %I:%M%p UT")
+        logging.info("Time: %s" % now)
+
+        # Platform
+        system = platform.system()
+        processor = platform.processor()
+
+        if system == "Linux":
+            distro = " ".join(platform.linux_distribution())
+            logging.debug("OS: %s (Linux %s %s)" %  (
+                distro, platform.release(), processor))
+        elif system == "Darwin":
+            logging.debug("OS: Mac OS X %s (%s)" % (
+                platform.mac_ver()[0], processor)
+            )
+        elif system == "Windows":
+            logging.debug("OS: Windows %s %s (%s)" %  (
+                platform.release(), platform.version(), processor))
+        else:
+            logging.debug ("Unknown OS (%s)" % processor)
+
+        # Architecture
+        logging.debug('Architecture: %s' % platform.architecture()[0])
+
+        # Python version
+        logging.debug("Python %s" % platform.python_version())
+
+        # Check python dependencies
+        try:
+            from numpy import __version__ as numpy_version
+        except ImportError:
+            numpy_version = "NOT INSTALLED"
+
+        try:
+            from scipy import __version__ as scipy_version
+        except ImportError:
+            scipy_version = "NOT INSTALLED"
+
+        try:
+            from sklearn import __version__ as sklearn_version
+        except ImportError:
+            sklearn_version = "NOT INSTALLED"
+
+        try:
+            from yaml import __version__ as yaml_version
+        except ImportError:
+            yaml_version = "NOT INSTALLED"
+
+        logging.debug("NumPy: %s" % numpy_version)
+        logging.debug("SciPy: %s" % scipy_version)
+        logging.debug("Scikit-Learn: %s" % sklearn_version)
+        logging.debug("PyYAML: %s" % yaml_version)
+
+        # @TODO: command-line tool versions (SAMtools, etc)
+
     def run(self):
         """Main application process"""
         # map reads
-        if args.input_type == 'fastq':
+        if self.args.input_type == 'fastq':
             logging.info("Mapping reads")
             self.mapper.run(self.args.input_reads)
 
@@ -86,7 +151,7 @@ class EVE(object):
         parser.add_argument('input_reads', nargs='+',
                             help=('Input paired-end Illumina reads or '
                                   'alignment. Supported file formats include '
-                                  '.fastq, .fastq.gz, and .bam')
+                                  '.fastq, .fastq.gz, and .bam'))
         parser.add_argument('-o', '--output',
                             help='Location to save final VCF output to.')
         parser.add_argument('-g', '--gff', required=True,
