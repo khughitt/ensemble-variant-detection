@@ -7,14 +7,28 @@ Overview
 --------
 
 This project was started as part of a summer course in bioinformatics
-and computational biology hosted by the university Tübingen from August
-4-9, 2014.
+and computational biology hosted by the [University of
+Tübingen](http://www.ra.cs.uni-tuebingen.de/links/bioinformatik/welcome_e.html)
+in collaboration with the [University of Maryland, College
+Park](http://www.cbcb.umd.edu/) from August 4-9, 2014.
 
 Requirements
 ------------
-- Python 3
+
+EVE is written in Python and requires a recent version of Python and several
+Python libraries, as well as a number of command-line bioinformatics tools.
+
+## Python
+
+- [Python 3](https://www.python.org/downloads/)
 - [PyYAML](http://pyyaml.org/)
+- [scikit-learn](http://scikit-learn.org/stable/)
+
+## Bioinformatics tools
+
 - [Burrows-Wheeler Aligner (BWA)](http://bio-bwa.sourceforge.net/)
+- [Genome Analysis Toolkit (GATK)](https://www.broadinstitute.org/gatk/)
+- [SAMtools](http://samtools.sourceforge.net/)
 
 Installation
 ------------

@@ -11,6 +11,7 @@ from eve import detectors,mappers
 class EVE(object):
     """Ensemble Variant Detection"""
     def __init__(self, argv):
+        # parse arguments
         self.args = self.parse_args(argv)
 
         # create working directories
@@ -20,7 +21,8 @@ class EVE(object):
         self.initialize_logger()
 
         # load mapper
-        self.mapper = mappers.BWAMapper()
+        if args.input_type == 'fastq':
+            self.mapper = mappers.BWAMapper()
 
         # load detectors
         self.detectors = []
@@ -62,8 +64,9 @@ class EVE(object):
     def run(self):
         """Main application process"""
         # map reads
-        logging.info("Mapping reads")
-        self.mapper.run(self.args.input_reads)
+        if args.input_type == 'fastq':
+            logging.info("Mapping reads")
+            self.mapper.run(self.args.input_reads)
 
         # run variant detectors
 
@@ -81,7 +84,9 @@ class EVE(object):
         parser = argparse.ArgumentParser(
                 description='Ensemble Variant Detection')
         parser.add_argument('input_reads', nargs='+',
-                            help='Input paired-end Illumina reads')
+                            help=('Input paired-end Illumina reads or '
+                                  'alignment. Supported file formats include '
+                                  '.fastq, .fastq.gz, and .bam')
         parser.add_argument('-o', '--output',
                             help='Location to save final VCF output to.')
         parser.add_argument('-g', '--gff', required=True,
@@ -102,6 +107,12 @@ class EVE(object):
             raise IOError("Too many input arguments specified")
         if not os.path.isfile(args.gff):
             raise IOError("Invalid GFF filepath specified")
+
+        # determine input type (FASTQ or BAM)
+        if len(args.input_reads) == 1 and args.input_reads[0].endswith('.bam'):
+            args.input_type = 'bam'
+        else:
+            args.input_type = 'fastq'
 
         return args
 
