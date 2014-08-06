@@ -1,0 +1,7 @@
+---
+name: mpileup
+command: samtools mpileup
+parameters:
+  -f: 'test'
+  -6:
+
