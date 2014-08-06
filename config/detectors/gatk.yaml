@@ -11,4 +11,4 @@ parameters:
   -stand_emit_conf 10
   -o: 'commands'
 
-# 
+# gatk -T UnifiedGenotyper -R reference.fasta -I inputfile.bam --dbsnp dbsnp.vcf (if any) -o output.vcf -nt numberofcores -stand_call_conf 30 -stand_emit_conf 10 -dcov 250
