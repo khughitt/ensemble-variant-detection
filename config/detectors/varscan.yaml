@@ -1,7 +1,10 @@
 ---
 name: varscan
-command: xxx
+command: 
 parameters:
   -placeholder: 'commands'
   --placehold-switch:
 
+# samtools mpileup -f /scratch/summerschool/Data/Reference_Genomes/hsa_37.p5/hs_ref_GRCh37.p5_chr22.fa /scratch/summerschool/Data/Data_From_Tuebingen/NA12878_01.bam > NA12878_01.bam.mpileup
+# varscan2 pileup2snp NA12878_01.bam.mpileup > varscan.called_snps.vcf
+# varscan2 pileup2indel NA12878_01.bam.mpileup > varscan.called_indels.vcf
