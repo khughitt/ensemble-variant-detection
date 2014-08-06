@@ -37,17 +37,23 @@ class EVE(object):
 
         for subdir in ['mapped', 'vcf']:
             path = os.path.join(self.working_dir, subdir)
-            if not os.path.isdir(subdir):
-                os.makedirs(subdir)
+            if not os.path.isdir(path):
+                os.makedirs(path)
 
     def initialize_logger(self):
         """Initializes a logger instance"""
         logging.basicConfig(level=logging.INFO,
-                            filename=os.path.join(self.working_dir, 'eve.log')
+                format='%(asctime)s [%(levelname)s] %(message)s',
+                filename=os.path.join(self.working_dir, 'eve.log'))
 
         # log to console as well
         console = logging.StreamHandler()
         console.setLevel(logging.INFO)
+
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('[%(levelname)s] %(message)s')
+
+        # tell the handler to use this format
         console.setFormatter(formatter)
 
         # add the handler to the root logger
@@ -57,14 +63,24 @@ class EVE(object):
         """Main application process"""
         # map reads
         logging.info("Mapping reads")
+        self.mapper.run(self.args.input_reads)
 
-        self.mapper.run(args.input_reads)
+        # run variant detectors
+
+        # normalize output from variant detectors and read in as either a NumPy
+        # matrix or pandas DataFrame
+
+        # run classifier
+        # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
+
+        # output final VCF
+
 
     def parse_args(self, argv):
         """Parses input arguments"""
         parser = argparse.ArgumentParser(
                 description='Ensemble Variant Detection')
-        parser.add_argument('input-reads', nargs='+',
+        parser.add_argument('input_reads', nargs='+',
                             help='Input paired-end Illumina reads')
         parser.add_argument('-o', '--output',
                             help='Location to save final VCF output to.')
@@ -77,7 +93,7 @@ class EVE(object):
                             help=('Comma-separated list of the variant '
                                   'detectors to be used.'))
         parser.add_argument('-w', '--working-directory',
-                            default='output',
+                            default='output/',
                             help='Location to store intermediate files')
         args = parser.parse_args()
 
