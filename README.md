@@ -30,21 +30,30 @@ Usage
 Example usage:
 
 ```
-python eve.py -i path/to/input/reads*.fastq \
-              -g path/to/genome.gff         \
-              -o output.vcf
+python eve.py -g path/to/genome.gff         \
+              -o output.vcf                 \
+              reads_1.fastq reads_2.fastq
 ```
 
 A more complex example:
 
 ```
-python eve.py --input=path/to/input/reads*.fastq       \
-              --gff=path/to/genome.gff                 \
+python eve.py --gff=path/to/genome.gff                 \
               --mapper=bowtie2                         \
               --variant-detectors=gatk,mpileup,varscan \
               --working-directory=/scratch/eve         \
-              --output=out.vcf
+              --output=out.vcf                         \
+              reads_1.fastq.gz reads_2.fastq.gz
 ```
+
+TODO
+----
+- Add support for single-end reads
+- Incorporate coverage,quality scores,sequence complexity and GC richness
+  into classification.
+- unit testing / CI
+- sphinx documentation
+- setup.py
 
 References
 ----------

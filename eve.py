@@ -37,16 +37,15 @@ class EVE(object):
     def run(self):
         """Main application process"""
         # map reads
-        for fastq in self.args.input_list:
+        for fastq in self.args.input_args:
             print(fastq)
 
     def parse_args(self, argv):
         """Parses input arguments"""
         parser = argparse.ArgumentParser(
                 description='Ensemble Variant Detection')
-        parser.add_argument('-i', '--input', required=True,
-                            help=('Wildcard string specifying location of '
-                                  'input FASTQ files to use'))
+        parser.add_argument('input-reads', nargs='+',
+                            help='Input paired-end Illumina reads')
         parser.add_argument('-o', '--output',
                             help='Location to save final VCF output to.')
         parser.add_argument('-g', '--gff', required=True,
@@ -63,9 +62,8 @@ class EVE(object):
         args = parser.parse_args()
 
         # validate input arguments
-        args.input_list = glob.glob(args.input)
-        if len(args.input_list) is 0:
-            raise IOError("Invalid input filepath string specified")
+        if len(args.input_args) > 2:
+            raise IOError("Too many input arguments specified")
         if not os.path.isfile(args.gff):
             raise IOError("Invalid GFF filepath specified")
 
