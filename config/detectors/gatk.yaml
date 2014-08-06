@@ -1,0 +1,7 @@
+---
+name: gatk
+command: xxx
+parameters:
+  -placeholder: 'commands'
+  --placehold-switch:
+

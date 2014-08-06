@@ -3,12 +3,9 @@ Variant Detector Classes
 
 TODO: parallelize execution of different variant callers.
 """
+import logging
 import subprocess
-from yaml import load, dump
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
+from yaml import load, Loader
 
 class Detector(object):
     """Base Detector class"""
@@ -38,7 +35,15 @@ class Detector(object):
 
     def run(self):
         """Runs the given detectors"""
-        p = subprocess.Popen(self.get_arg_list)
-        p.wait()
+        process = subprocess.Popen(self.get_arg_list,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
 
+        if stdout:
+            logging.info(stdout)
+        if stderr:
+            logging.error(stderr)
+
+        return process.returncode
 

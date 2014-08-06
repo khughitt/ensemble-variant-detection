@@ -4,23 +4,41 @@ import os
 import sys
 import glob
 import argparse
-from eve import detectors
+import datetime
+from eve import detectors,mappers
 
 class EVE(object):
     """Ensemble Variant Detection"""
     def __init__(self, argv):
         self.args = self.parse_args(argv)
 
-    def run(self):
-        """Main application process"""
-        # load mappers
+        # create working directories
+        self.create_working_directories()
+
+        # load mapper
+        self.mapper = mappers.BWAMapper()
 
         # load detectors
         self.detectors = []
 
         for detector in self.args.variant_detectors.split(','):
-            conf = os.path.join('config', '%s.yaml' % detector)
+            conf = os.path.join('config', 'detectors', '%s.yaml' % detector)
             self.detectors.append(detectors.Detector(conf))
+
+    def create_working_directories(self):
+        """Creates directories to output intermediate files into"""
+        now = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
+
+        for subdir in ['mapped', 'vcf']:
+            path = os.path.join(self.args.working_directory, now, subdir)
+            if not os.path.isdir(subdir):
+                os.makedirs(subdir)
+
+    def run(self):
+        """Main application process"""
+        # map reads
+        for fastq in self.args.input_list:
+            print(fastq)
 
     def parse_args(self, argv):
         """Parses input arguments"""
@@ -29,6 +47,8 @@ class EVE(object):
         parser.add_argument('-i', '--input', required=True,
                             help=('Wildcard string specifying location of '
                                   'input FASTQ files to use'))
+        parser.add_argument('-o', '--output',
+                            help='Location to save final VCF output to.')
         parser.add_argument('-g', '--gff', required=True,
                             help='Location of GFF annotation file to use.')
         parser.add_argument('-m', '--mapper', default='bwa',
@@ -37,6 +57,9 @@ class EVE(object):
                             default='gatk,mpileup,varscan',
                             help=('Comma-separated list of the variant '
                                   'detectors to be used.'))
+        parser.add_argument('-w', '--working-directory',
+                            default='output',
+                            help='Location to store intermediate files')
         args = parser.parse_args()
 
         # validate input arguments

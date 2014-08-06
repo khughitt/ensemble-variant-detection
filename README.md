@@ -42,6 +42,7 @@ python eve.py --input=path/to/input/reads*.fastq       \
               --gff=path/to/genome.gff                 \
               --mapper=bowtie2                         \
               --variant-detectors=gatk,mpileup,varscan \
+              --working-directory=/scratch/eve         \
               --output=out.vcf
 ```
 
