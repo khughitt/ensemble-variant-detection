@@ -23,7 +23,7 @@ class EVE(object):
         self.log_system_info()
 
         # load mapper
-        if not args.bam:
+        if 'bam' in self.args:
             self.mapper = mappers.BWAMapper()
 
         # load detectors
@@ -45,7 +45,7 @@ class EVE(object):
     def run(self):
         """Main application process"""
         # map reads
-        if not args.bam:
+        if 'bam' in self.args:
             logging.info("Mapping reads")
             self.bam = self.mapper.run(self.args.input_reads)
 
