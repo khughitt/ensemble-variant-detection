@@ -74,6 +74,7 @@ python eve.py --gff=path/to/annotations.gff            \
 TODO
 ----
 - Add support for single-end reads
+- Enable setting of Picard location
 - Incorporate coverage,quality scores,sequence complexity and GC richness
   into classification.
 - Check for FASTA indices
