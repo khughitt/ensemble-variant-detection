@@ -1,30 +1,17 @@
 """
 Read-mapping classes
 """
+import os
+import logging
+
 class Mapper(object):
     """Base read mapper class"""
-    def __init__(self, fasta1, fasta2, conf, working_dir, outfile_mapping):
+    def __init__(self, fasta1, fasta2, working_dir, outfile):
         """Create a detector instance"""
-        self.config = self.parse_config(conf)
-        self.fasta1 = fasta1 
+        self.fasta1 = fasta1
         self.fasta2 = fasta2
         self.working_dir = working_dir
-        self.outfile_mapping = outfile_mapping            
-
-    def get_arg_list(self):
-           """Returns a list of command-line arguments for the detector"""
-           args = [self.config['command']]
-
-           for key in self.config['parameters']:
-               value = self.config['parameters'][key]
-               if value is None:
-                   args.append(" %s" % key)
-               elif key.startswith('--'):
-                   args.append((" %s=%s" % (key, value)))
-               else:
-                   args.append((" %s %s" % (key, value)))
-
-           return(args)
+        self.outfile = outfile
 
     def run(self, args):
         """Runs the given mappers"""
@@ -38,19 +25,23 @@ class Mapper(object):
         if stderr:
             logging.error(stderr)
 
-        return process.returncode    
+        return process.returncode
 
 class BWAMemMapper(Mapper):
     """Burrows-Wheeler Aligner Mapper class"""
-    def __init__(self, fasta1, fasta2, conf, working_dir, outfile_mapping):
-        super().__init__(fasta1, fasta2, conf, working_dir, outfile_mapping)
-        
+    def __init__(self, fasta1, fasta2, working_dir, outfile):
+        super().__init__(fasta1, fasta2, working_dir, outfile)
+
     def run(self):
-        
-        bwa_output = os.path.join(self.working_dir, 'aln-pe.sam')
-        cmd = "bwa mem -t {threads} {fasta1} {fasta2} > {output}".format(fasta1=self.fasta1, 
-                        fasta2=self.fasta2, threads=self.threads, output=bwa_output)      
-        print(cmd)
-        super().run(cmd.split(' '))                
-        # bwa mem -t 32 ../Reference_Genomes/hg19/hg19_complete.fasta NA12878_01_chr22_L001_R1_001.fastq NA12878_01_chr22_L001_R2_001.fastq  > aln-NA12878_01_chr22_L001_untrimmed-pe.sam
-        
+        """Run BWA mapping command"""
+        # @TODO: accept number of threads as argument
+        bwa_output = os.path.join(self.working_dir, self.outfile)
+        cmd = "bwa mem -t {threads} {fasta1} {fasta2} > {output}".format(
+                    fasta1=self.fasta1, fasta2=self.fasta2,
+                    threads=32, output=bwa_output
+        )
+        logging.debug(cmd)
+
+        # Run BWA
+        super().run(cmd.split(' '))
+

@@ -23,8 +23,27 @@ class EVE(object):
         self.log_system_info()
 
         # load mapper
-        if 'bam' in self.args:
-            self.mapper = mappers.BWAMapper()
+        if 'bam' not in self.args:
+            # split fastq reads into two variables
+            (reads1, reads2) = self.args.input_reads
+
+            # output file
+            prefix = os.path.basename(
+                        os.path.commonprefix([reads1, reads2])).strip("_")
+            filename = "aln_%s.sam" % prefix
+            outfile = os.path.join(self.working_dir, filename)
+
+            self.mapper = mappers.BWAMemMapper(
+                reads1, reads2, self.working_dir, outfile
+            )
+
+
+    def run(self):
+        """Main application process"""
+        # map reads
+        if 'bam' not in self.args:
+            logging.info("Mapping reads")
+            self.bam = self.mapper.run()
 
         # load detectors
         self.detectors = []
@@ -41,17 +60,16 @@ class EVE(object):
                 self.detectors.append(detectors.MpileupDetector(
                     self.args.bam, self.args.fasta, conf, self.working_dir
                 ))
-
-    def run(self):
-        """Main application process"""
-        # map reads
-        if 'bam' in self.args:
-            logging.info("Mapping reads")
-            self.bam = self.mapper.run(self.args.input_reads)
+            elif detector == 'gatk':
+                self.detectors.append(detectors.GATKDetector(
+                    self.args.bam, self.args.fasta, conf, self.working_dir
+                ))
 
         # run variant detectors
-        # TESTING
+        logging.info("Running variant detection algorithms")
 
+        # TESTING (GATK)
+        self.detectors[0].run()
 
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
@@ -60,8 +78,6 @@ class EVE(object):
         # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
 
         # output final VCF
-
-
 
     def create_working_directories(self):
         """Creates directories to output intermediate files into"""
@@ -189,7 +205,7 @@ class EVE(object):
 
         # determine input type (FASTQ or BAM)
         if len(args.input_reads) == 1 and args.input_reads[0].endswith('.bam'):
-            args.bam == args.input_reads[0]
+            args.bam = args.input_reads[0]
 
         return args
 

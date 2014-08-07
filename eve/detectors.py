@@ -41,9 +41,13 @@ class VariantDetector(object):
 
     def run(self):
         """Runs the given detectors"""
+        logging.debug(" ".join(self.get_arg_list()))
+        print(" ".join(self.get_arg_list()))
+
         process = subprocess.Popen(self.get_arg_list(),
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
+
         stdout, stderr = process.communicate()
 
         if stdout:
@@ -52,6 +56,13 @@ class VariantDetector(object):
             logging.error(stderr)
 
         return process.returncode
+
+class GATKDetector(VariantDetector):
+    """
+    GATKDetector variant detector
+    """
+    def __init__(self, bam, fasta, conf, working_dir):
+        super().__init__(bam, fasta, conf, working_dir)
 
 class MpileupDetector(VariantDetector):
     """
