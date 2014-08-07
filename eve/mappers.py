@@ -3,6 +3,7 @@ Read-mapping classes
 """
 import os
 import logging
+import subprocess
 
 class Mapper(object):
     """Base read mapper class"""
