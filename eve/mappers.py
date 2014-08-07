@@ -31,7 +31,8 @@ class Mapper(object):
         if stderr:
             logging.error(stderr)
 
-        return process.returncode
+        #return process.returncode
+        return self.outfile
 
 class BWAMemMapper(Mapper):
     """Burrows-Wheeler Aligner Mapper class"""

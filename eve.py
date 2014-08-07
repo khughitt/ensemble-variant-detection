@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Ensemble Variant Detection (EVE)
+
+This file contains the main class and execution logic for the EVE variant
+detection pipeline.
+"""
 import os
 import sys
 import glob
@@ -36,7 +42,6 @@ class EVE(object):
             self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
                                                outfile, self.args.max_threads)
 
-
     def run(self):
         """Main application process"""
         # map reads
@@ -45,24 +50,7 @@ class EVE(object):
             self.bam = self.mapper.run()
 
         # load detectors
-        self.detectors = []
-
-        for detector in self.args.variant_detectors.split(','):
-            # config filepath (txt/yaml)
-            # @TODO : normalize handling of config files (just use txt)
-            conf = os.path.join('config', 'detectors', '%s.yaml' % detector)
-            if not os.path.exists(conf):
-                conf = os.path.join('config', 'detectors', '%s.txt' % detector)
-
-            # @TODO: dynamically load classes
-            if detector == 'mpileup':
-                self.detectors.append(detectors.MpileupDetector(
-                    self.args.bam, self.args.fasta, conf, self.working_dir
-                ))
-            elif detector == 'gatk':
-                self.detectors.append(detectors.GATKDetector(
-                    self.args.bam, self.args.fasta, conf, self.working_dir
-                ))
+        self.load_detectors()
 
         # run variant detectors
         logging.info("Running variant detection algorithms")
@@ -77,6 +65,31 @@ class EVE(object):
         # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
 
         # output final VCF
+
+    def load_detectors(self):
+        """Loads the variant detector instances"""
+        # available detectors
+        mapping = {
+            'mpileup': detectors.MpileupDetector,
+            'gatk'   : detectors.GATKDetector,
+            'varscan': detectors.VarScanDetector
+        }
+
+        # load detectors
+        self.detectors = []
+
+        for detector in self.args.variant_detectors.split(','):
+            # config filepath (txt/yaml)
+            # @TODO : normalize handling of config files (just use txt)
+            conf = os.path.join('config', 'detectors', '%s.yaml' % detector)
+            if not os.path.exists(conf):
+                conf = os.path.join('config', 'detectors', '%s.txt' % detector)
+
+            cls = mapping[detector]
+
+            self.detectors.append(cls(
+                self.args.bam, self.args.fasta, conf, self.working_dir
+            ))
 
     def create_working_directories(self):
         """Creates directories to output intermediate files into"""
