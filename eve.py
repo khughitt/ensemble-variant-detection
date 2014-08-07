@@ -15,6 +15,7 @@ import argparse
 import datetime
 import platform
 import subprocess
+import configparser
 from pandas import DataFrame
 from eve import detectors,mappers
 
@@ -150,9 +151,11 @@ class EVE(object):
         """Loads the variant detector instances"""
         # available detectors
         mapping = {
-            'mpileup': detectors.MpileupDetector,
-            'gatk'   : detectors.GATKDetector,
-            'varscan': detectors.VarScanDetector
+            'mpileup': (detectors.MpileupDetector, None),
+            'gatk'   : (detectors.GATKDetector,
+                        self.config['tools']['GATK_jar']),
+            'varscan': (detectors.VarScanDetector,
+                        self.config['tools']['VarScan_jar'])
         }
 
         # load detectors
@@ -160,11 +163,11 @@ class EVE(object):
 
         for detector in self.args.variant_detectors.split(','):
             conf = os.path.join('config', 'detectors', '%s.cmd' % detector)
-            cls = mapping[detector]
+            (cls, location) = mapping[detector]
 
             self.detectors.append(cls(
                 self.args.bam, self.args.fasta, conf, self.working_dir,
-                self.args.max_threads
+                self.args.max_threads, location
             ))
 
     def create_working_directories(self):
@@ -292,6 +295,11 @@ class EVE(object):
             args.bam = args.input_reads[0]
 
         return args
+
+    def load_config(self):
+        """Loads the general configuration file for EVE"""
+        self.config = configparser.ConfigParser()
+        self.config.read('config/eve.cfg')
 
 if __name__ == '__main__':
     app = EVE(sys.argv)

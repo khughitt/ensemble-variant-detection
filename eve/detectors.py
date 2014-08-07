@@ -9,13 +9,14 @@ import subprocess
 
 class VariantDetector(object):
     """Base Detector class"""
-    def __init__(self, bam, fasta, conf, working_dir, threads):
+    def __init__(self, bam, fasta, conf, working_dir, threads, location):
         """Create a detector instance"""
         self.commands = self.parse_command_template(conf)
         self.bam = bam
         self.fasta = fasta
         self.working_dir = working_dir
         self.threads = threads
+        self.location = location
 
     def parse_command_template(self, filepath):
         """Parses a configuration file containing options for the variant
@@ -43,8 +44,8 @@ class GATKDetector(VariantDetector):
 
         # Find all SNPs and indels, regardless of coverage
         cmd = self.commands[0].format(
-            reference=self.fasta, bam=self.bam, vcf_unfiltered=unfiltered_vcf,
-            threads=self.threads
+            jar=self.location, reference=self.fasta, bam=self.bam,
+            vcf_unfiltered=unfiltered_vcf, threads=self.threads
         )
 
         logging.debug(cmd)
@@ -52,8 +53,8 @@ class GATKDetector(VariantDetector):
 
         # Filter out low-coverage hits
         cmd = self.commands[1].format(
-            reference=self.fasta, vcf_unfiltered=unfiltered_vcf,
-            vcf_filtered=filtered_vcf
+            jar=self.location, reference=self.fasta,
+            vcf_unfiltered=unfiltered_vcf, vcf_filtered=filtered_vcf
         )
 
         logging.debug(cmd)
@@ -125,8 +126,8 @@ class VarScanDetector(VariantDetector):
 
         # Step 2: pileup2snp
         cmd2 = self.commands[1].format(
-                mpileup_output=mpileup_outfile,
-                varscan_snps=varscan_snps_vcf
+            jar=self.location, mpileup_output=mpileup_outfile,
+            varscan_snps=varscan_snps_vcf
         )
 
         logging.debug(cmd2)
@@ -134,8 +135,8 @@ class VarScanDetector(VariantDetector):
 
         # Step 3: pileup2indel
         cmd3 = self.commands[2].format(
-                mpileup_output=mpileup_outfile,
-                varscan_indels=varscan_indels_vcf
+            jar=self.location, mpileup_output=mpileup_outfile,
+            varscan_indels=varscan_indels_vcf
         )
 
         logging.debug(cmd3)
