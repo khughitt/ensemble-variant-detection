@@ -33,9 +33,7 @@ class EVE(object):
             filename = "aln_%s.sam" % prefix
             outfile = os.path.join(self.working_dir, filename)
 
-            self.mapper = mappers.BWAMemMapper(
-                reads1, reads2, self.working_dir, outfile
-            )
+            self.mapper = mappers.BWAMemMapper(reads1, reads2, outfile)
 
 
     def run(self):
