@@ -37,7 +37,7 @@ class EVE(object):
             prefix = os.path.basename(
                         os.path.commonprefix([reads1, reads2])).strip("_")
             filename = "aln_%s.sam" % prefix
-            outfile = os.path.join(self.working_dir, filename)
+            outfile = os.path.join(self.working_dir, 'mapped', filename)
 
             self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
                                                outfile, self.args.max_threads)
@@ -93,7 +93,7 @@ class EVE(object):
 
         self.working_dir = os.path.join(self.args.working_directory, now)
 
-        for subdir in ['mapped', 'vcf']:
+        for subdir in ['mapped', 'vcf', 'misc', 'mpileup']:
             path = os.path.join(self.working_dir, subdir)
             if not os.path.isdir(path):
                 os.makedirs(path)

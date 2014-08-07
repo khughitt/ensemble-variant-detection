@@ -26,10 +26,10 @@ class Mapper(object):
         # Going to cheat for a bit...
         subprocess.call(" ".join(args), shell=True)
 
-        if stdout:
-            logging.info(stdout)
-        if stderr:
-            logging.error(stderr)
+        #if stdout:
+        #    logging.info(stdout)
+        #if stderr:
+        #    logging.error(stderr)
 
         #return process.returncode
         return self.outfile
