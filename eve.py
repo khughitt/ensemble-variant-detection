@@ -60,8 +60,12 @@ class EVE(object):
         logging.info("Running variant detection algorithms")
 
         # TESTING (GATK)
-        logging.info("Running GATK")
-        self.detectors[0].run()
+        #logging.info("Running GATK")
+        #self.detectors[0].run()
+
+        # TESTING (VarScan)
+        logging.info("Running VarScan")
+        self.detectors[2].run()
 
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
@@ -93,8 +97,6 @@ class EVE(object):
             logging.info("Creating a FASTA sequence dictionary")
             logging.debug(cmd)
             subprocess.call(cmd, shell=True)
-
-
 
     def load_detectors(self):
         """Loads the variant detector instances"""
