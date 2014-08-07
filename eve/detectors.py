@@ -35,18 +35,34 @@ class GATKDetector(VariantDetector):
 
     def run(self):
         """Run GATK"""
-        # GATK otput filepath
-        outfile = os.path.join(self.working_dir, 'vcf', 'gatk.vcf')
+        logging.info("Running GATK")
 
-        print(self.commands)
+        # GATK output filepaths
+        unfiltered_vcf = os.path.join(self.working_dir, 'vcf', 'gatk_unfiltered.vcf')
+        filtered_vcf = os.path.join(self.working_dir, 'vcf', 'gatk_filtered.vcf')
+
+        # Find all SNPs and indels, regardless of coverage
         cmd = self.commands[0].format(
-            reference=self.fasta, bam=self.bam, outfile=outfile,
+            reference=self.fasta, bam=self.bam, vcf_unfiltered=unfiltered_vcf,
             threads=self.threads
         )
 
         logging.debug(cmd)
         subprocess.call(cmd, shell=True)
 
+        # Filter out low-coverage hits
+        cmd = self.commands[1].format(
+            reference=self.fasta, vcf_unfiltered=unfiltered_vcf,
+            vcf_filtered=filtered_vcf
+        )
+
+        logging.debug(cmd)
+        subprocess.call(cmd, shell=True)
+
+        # Clean up
+        os.unlink(unfiltered_vcf)
+
+        return filtered_vcf
 
 class MpileupDetector(VariantDetector):
     """
@@ -61,6 +77,7 @@ class MpileupDetector(VariantDetector):
     def run(self):
         """Run the Mpile detection pipeline"""
         # Part 1: mpileup
+        logging.info("Running Mpileup")
         bcf_output = os.path.join(self.working_dir, 'vcf', 'var.raw.bcf')
         cmd1 = self.commands[0].format(fasta=self.fasta, bam=self.bam,
                                        bcf_output=bcf_output)
@@ -73,6 +90,11 @@ class MpileupDetector(VariantDetector):
         logging.debug(cmd2)
         subprocess.call(cmd2, shell=True)
 
+        # Cleanup
+        os.unlink(bcf_output)
+
+        return outfile
+
 class VarScanDetector(VariantDetector):
     """
     VarScanDetector variant detector
@@ -82,6 +104,8 @@ class VarScanDetector(VariantDetector):
 
     def run(self):
         """Run VarScan"""
+        logging.info("Running VarScan")
+
         # VarScan intermediate and output filepaths
         mpileup_outfile = os.path.join(self.working_dir, 'mpileup',
                                        'varscan.mpileup')
@@ -115,3 +139,5 @@ class VarScanDetector(VariantDetector):
 
         logging.debug(cmd3)
         subprocess.call(cmd3, shell=True)
+
+        return [varscan_snps_vcf, varscan_indels_vcf]

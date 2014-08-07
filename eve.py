@@ -59,13 +59,16 @@ class EVE(object):
         # run variant detectors
         logging.info("Running variant detection algorithms")
 
-        # TESTING (GATK)
-        #logging.info("Running GATK")
-        #self.detectors[0].run()
+        # @TODO: parallelize
+        vcf_files = []
 
-        # TESTING (VarScan)
-        logging.info("Running VarScan")
-        self.detectors[2].run()
+        for detector in self.detectors:
+            output = detector.run()
+
+            if isinstance(output, list):
+                vcf_files += output
+            else:
+                vcf_files.append(output)
 
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
