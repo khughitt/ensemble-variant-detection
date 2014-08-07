@@ -3,6 +3,7 @@ Variant Detector Classes
 
 TODO: parallelize execution of different variant callers.
 """
+import os
 import logging
 import subprocess
 
@@ -19,7 +20,7 @@ class VariantDetector(object):
     def parse_command_template(self, filepath):
         """Parses a configuration file containing options for the variant
            detector"""
-        return [x.strip() for x in open(filepath).readline()]
+        return [x.strip() for x in open(filepath).readlines()]
 
     def run(self):
         """Runs the given detectors"""
@@ -37,9 +38,10 @@ class GATKDetector(VariantDetector):
         # GATK otput filepath
         outfile = os.path.join(self.working_dir, 'vcf', 'gatk.vcf')
 
+        print(self.commands)
         cmd = self.commands[0].format(
             reference=self.fasta, bam=self.bam, outfile=outfile,
-            threads=self.max_threads
+            threads=self.threads
         )
 
         logging.debug(cmd)

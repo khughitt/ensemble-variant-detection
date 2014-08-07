@@ -47,7 +47,7 @@ class EVE(object):
         # map reads
         if 'bam' not in self.args:
             logging.info("Mapping reads")
-            self.bam = self.mapper.run()
+            self.args.bam = self.mapper.run()
 
         # load detectors
         self.load_detectors()
@@ -56,6 +56,7 @@ class EVE(object):
         logging.info("Running variant detection algorithms")
 
         # TESTING (GATK)
+        logging.info("Running GATK")
         self.detectors[0].run()
 
         # normalize output from variant detectors and read in as either a NumPy
@@ -84,7 +85,7 @@ class EVE(object):
 
             self.detectors.append(cls(
                 self.args.bam, self.args.fasta, conf, self.working_dir,
-                self.max_threads
+                self.args.max_threads
             ))
 
     def create_working_directories(self):
