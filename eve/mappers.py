@@ -24,7 +24,7 @@ class Mapper(object):
         #stdout, stderr = process.communicate()
 
         # Going to cheat for a bit...
-        subprocess.call(cmd, shell=True)
+        subprocess.call(" ".join(args), shell=True)
 
         if stdout:
             logging.info(stdout)
