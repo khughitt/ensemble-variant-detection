@@ -113,13 +113,47 @@ class EVE(object):
         combined_dict = {}
 
         for name,reader in filtered_vcf_readers.items():
-            combined_dict[name] = {}
+            # quality feature name
+            qual_name = "%s_qual" % name
 
-            for record in reader:
+            combined_dict[name] = {}
+            combined_dict[qual_name] = {}
+
+            for i, record in enumerate(reader):
                 # @TODO: decide how to deal with multiple alleles
-                if len(record.ALT) > 1:
-                    print(record.ALT)
+                # i.e.: len(record.ALT) > 1
+
+                # Determine quality score to use
+                try:
+                    # GATK
+                    qual_score = record.INFO['QD']
+                except KeyError:
+                    try:
+                        # VarScan
+                        # http://varscan.sourceforge.net/support-faq.html#output-confidence
+                        qual_score = record.samples[0]['GQ']
+                    except:
+                        # mpileup
+                        # Also contains the Genotype Quality score used for
+                        # VarScan above...
+                        qual_score = record.QUAL / record.INFO['DP']
+
+                # Determine read depth (only need once...)
+                if i == 0:
+                    try:
+                        # GATK
+                        depth = record.INFO['DP']
+                    except KeyError:
+                        try:
+                            # VarScan
+                            depth = INFO['ADP']
+                        except KeyError:
+                            depth = INFO['DP']
+                    # Add depth to dict
+                    combined_dict["depth"][record.POS] = depth
+
                 combined_dict[name][record.POS] = record.ALT[0]
+                combined_dict[qual_name][record.POS] = qual_score
 
         # Convert to a DataFrame
         return DataFrame.from_dict(combined_dict)
