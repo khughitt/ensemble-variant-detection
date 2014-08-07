@@ -17,11 +17,14 @@ class Mapper(object):
 
     def run(self, args):
         """Runs the given mappers"""
-        process = subprocess.Popen(args,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   shell=True)
-        stdout, stderr = process.communicate()
+        #process = subprocess.Popen(args,
+        #                           stdout=subprocess.PIPE,
+        #                           stderr=subprocess.PIPE,
+        #                           shell=True)
+        #stdout, stderr = process.communicate()
+
+        # Going to cheat for a bit...
+        subprocess.call(cmd, shell=True)
 
         if stdout:
             logging.info(stdout)
