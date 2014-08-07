@@ -41,18 +41,29 @@ Configuration
 Usage
 -----
 
-Example usage:
+## FASTQ input example
 
 ```
-python eve.py -g path/to/genome.gff         \
+python eve.py -g path/to/annotations.gff    \
+              -f path/to/genome.fasta       \
               -o output.vcf                 \
               reads_1.fastq reads_2.fastq
 ```
 
-A more complex example:
+## BAM input example
 
 ```
-python eve.py --gff=path/to/genome.gff                 \
+python eve.py -g path/to/annotations.gff    \
+              -f path/to/genome.fasta       \
+              -o output.vcf                 \
+              accepted_hits.bam
+```
+
+## A more complex example:
+
+```
+python eve.py --gff=path/to/annotations.gff            \
+              --fasta=path/to/genome.fasta             \
               --mapper=bowtie2                         \
               --variant-detectors=gatk,mpileup,varscan \
               --working-directory=/scratch/eve         \

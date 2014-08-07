@@ -23,15 +23,45 @@ class EVE(object):
         self.log_system_info()
 
         # load mapper
-        if self.args.input_type == 'fastq':
+        if not args.bam:
             self.mapper = mappers.BWAMapper()
 
         # load detectors
         self.detectors = []
 
         for detector in self.args.variant_detectors.split(','):
+            # config filepath (txt/yaml)
+            # @TODO : normalize handling of config files (just use txt)
             conf = os.path.join('config', 'detectors', '%s.yaml' % detector)
-            self.detectors.append(detectors.Detector(conf))
+            if not os.path.exists(conf):
+                conf = os.path.join('config', 'detectors', '%s.txt' % detector)
+
+            # @TODO: dynamically load classes
+            if detector == 'mpileup':
+                self.detectors.append(detectors.MpileupDetector(
+                    self.args.bam, self.args.fasta, conf, self.working_dir
+                ))
+
+    def run(self):
+        """Main application process"""
+        # map reads
+        if not args.bam:
+            logging.info("Mapping reads")
+            self.bam = self.mapper.run(self.args.input_reads)
+
+        # run variant detectors
+        # TESTING
+
+
+        # normalize output from variant detectors and read in as either a NumPy
+        # matrix or pandas DataFrame
+
+        # run classifier
+        # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
+
+        # output final VCF
+
+
 
     def create_working_directories(self):
         """Creates directories to output intermediate files into"""
@@ -126,24 +156,6 @@ class EVE(object):
 
         # @TODO: command-line tool versions (SAMtools, etc)
 
-    def run(self):
-        """Main application process"""
-        # map reads
-        if self.args.input_type == 'fastq':
-            logging.info("Mapping reads")
-            self.mapper.run(self.args.input_reads)
-
-        # run variant detectors
-
-        # normalize output from variant detectors and read in as either a NumPy
-        # matrix or pandas DataFrame
-
-        # run classifier
-        # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
-
-        # output final VCF
-
-
     def parse_args(self, argv):
         """Parses input arguments"""
         parser = argparse.ArgumentParser(
@@ -154,6 +166,8 @@ class EVE(object):
                                   '.fastq, .fastq.gz, and .bam'))
         parser.add_argument('-o', '--output',
                             help='Location to save final VCF output to.')
+        parser.add_argument('-f', '--fasta', required=True,
+                            help='Location of genome sequence file to use.')
         parser.add_argument('-g', '--gff', required=True,
                             help='Location of GFF annotation file to use.')
         parser.add_argument('-m', '--mapper', default='bwa',
@@ -175,9 +189,7 @@ class EVE(object):
 
         # determine input type (FASTQ or BAM)
         if len(args.input_reads) == 1 and args.input_reads[0].endswith('.bam'):
-            args.input_type = 'bam'
-        else:
-            args.input_type = 'fastq'
+            args.bam == args.input_reads[0]
 
         return args
 
