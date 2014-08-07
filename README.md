@@ -28,6 +28,7 @@ Python libraries, as well as a number of command-line bioinformatics tools.
 - [Burrows-Wheeler Aligner (BWA)](http://bio-bwa.sourceforge.net/)
 - [Genome Analysis Toolkit (GATK)](https://www.broadinstitute.org/gatk/)
 - [SAMtools](http://samtools.sourceforge.net/)
+- [Picard](http://picard.sourceforge.net/)
 
 Installation
 ------------

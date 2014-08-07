@@ -41,7 +41,7 @@ class BWAMemMapper(Mapper):
 
     def run(self):
         """Run BWA mapping command"""
-        cmd1 = "bwa mem -t {threads} {reference} {fastq1} {fastq2} > {output}".format(
+        cmd1 = "bwa mem -t {threads} -R '@RG\tID:illumina\tSM:1234' {reference} {fastq1} {fastq2} > {output}".format(
                     reference=self.reference,
                     fastq1=self.fastq1, fastq2=self.fastq2,
                     threads=self.max_threads, output=self.outfile

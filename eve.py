@@ -73,6 +73,7 @@ class EVE(object):
 
     def check_fasta_index(self):
         """Checks for a valid FASTA index and creates one if needed"""
+        # FAI index
         if not os.path.exists("%s.fai" % self.args.fasta):
             # FASTA indexing command
             cmd = "samtools faidx %s" % self.args.fasta
@@ -80,6 +81,20 @@ class EVE(object):
             logging.info("Creating a FASTA index")
             logging.debug(cmd)
             subprocess.call(cmd, shell=True)
+
+        # Sequence dictionary
+        base_filename = os.path.splitext(self.args.fasta)[0]
+        seqdict = "%s.dict" % base_filename
+
+        if not os.path.exists(seqdict):
+            cmd = "java -jar CreateSequenceDictionary.jar R=%s O=%s" % (
+                self.args.fasta, seqdict
+            )
+            logging.info("Creating a FASTA sequence dictionary")
+            logging.debug(cmd)
+            subprocess.call(cmd, shell=True)
+
+
 
     def load_detectors(self):
         """Loads the variant detector instances"""
