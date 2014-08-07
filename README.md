@@ -75,6 +75,7 @@ TODO
 - Add support for single-end reads
 - Incorporate coverage,quality scores,sequence complexity and GC richness
   into classification.
+- Check for FASTA indices
 - unit testing / CI
 - sphinx documentation
 - setup.py

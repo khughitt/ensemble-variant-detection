@@ -41,15 +41,41 @@ class BWAMemMapper(Mapper):
 
     def run(self):
         """Run BWA mapping command"""
-        # @TODO: accept number of threads as argument
-        cmd = "bwa mem -t {threads} {reference} {fastq1} {fastq2} > {output}".format(
+        cmd1 = "bwa mem -t {threads} {reference} {fastq1} {fastq2} > {output}".format(
                     reference=self.reference,
                     fastq1=self.fastq1, fastq2=self.fastq2,
                     threads=self.max_threads, output=self.outfile
         )
-        logging.debug(cmd)
+        logging.debug(cmd1)
 
         # Call base Detector.run method
-        args_list = cmd.split(' ')
-        super().run(args_list)
+        #args_list = cmd.split(' ')
+        #super().run(args_list)
+        subprocess.call(cmd1, shell=True)
+
+        # Convert to BAM
+        bam = self.outfile.replace(".sam", ".bam")
+
+        cmd2 = "samtools view -bS {sam} > {bam}".format(
+            sam=self.outfile, bam=bam
+        )
+
+        logging.debug(cmd2)
+        subprocess.call(cmd2, shell=True)
+
+        # Sort and index
+        bam_sorted = bam.replace('.bam', '_sorted')
+        cmd3 = "samtools sort {bam} {bam_sorted}".format(
+            bam=bam, bam_sorted=bam_sorted
+        )
+
+        logging.debug(cmd3)
+        subprocess.call(cmd3, shell=True)
+
+        cmd4 = "samtools index {bam_sorted}.bam".format(bam_sorted=bam_sorted)
+
+        logging.debug(cmd4)
+        subprocess.call(cmd4, shell=True)
+
+        return ("%s.bam" % bam_sorted)
 

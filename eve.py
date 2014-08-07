@@ -13,6 +13,7 @@ import logging
 import argparse
 import datetime
 import platform
+import subprocess
 from eve import detectors,mappers
 
 class EVE(object):
@@ -27,6 +28,9 @@ class EVE(object):
         # initialize logger
         self.initialize_logger()
         self.log_system_info()
+
+        # check for FASTA index and create if necessary
+        self.check_fasta_index()
 
         # load mapper
         if 'bam' not in self.args:
@@ -67,6 +71,16 @@ class EVE(object):
 
         # output final VCF
 
+    def check_fasta_index(self):
+        """Checks for a valid FASTA index and creates one if needed"""
+        if not os.path.exists("%s.fai" % self.args.fasta):
+            # FASTA indexing command
+            cmd = "samtools faidx %s" % self.args.fasta
+
+            logging.info("Creating a FASTA index")
+            logging.debug(cmd)
+            subprocess.call(cmd, shell=True)
+
     def load_detectors(self):
         """Loads the variant detector instances"""
         # available detectors
@@ -94,7 +108,7 @@ class EVE(object):
 
         self.working_dir = os.path.join(self.args.working_directory, now)
 
-        for subdir in ['mapped', 'vcf', 'misc', 'mpileup']:
+        for subdir in ['mapped', 'vcf', 'mpileup']:
             path = os.path.join(self.working_dir, subdir)
             if not os.path.isdir(path):
                 os.makedirs(path)
