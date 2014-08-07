@@ -79,16 +79,12 @@ class EVE(object):
         self.detectors = []
 
         for detector in self.args.variant_detectors.split(','):
-            # config filepath (txt/yaml)
-            # @TODO : normalize handling of config files (just use txt)
-            conf = os.path.join('config', 'detectors', '%s.yaml' % detector)
-            if not os.path.exists(conf):
-                conf = os.path.join('config', 'detectors', '%s.txt' % detector)
-
+            conf = os.path.join('config', 'detectors', '%s.cmd' % detector)
             cls = mapping[detector]
 
             self.detectors.append(cls(
-                self.args.bam, self.args.fasta, conf, self.working_dir
+                self.args.bam, self.args.fasta, conf, self.working_dir,
+                self.max_threads
             ))
 
     def create_working_directories(self):
@@ -172,15 +168,9 @@ class EVE(object):
         except ImportError:
             sklearn_version = "NOT INSTALLED"
 
-        try:
-            from yaml import __version__ as yaml_version
-        except ImportError:
-            yaml_version = "NOT INSTALLED"
-
         logging.debug("NumPy: %s" % numpy_version)
         logging.debug("SciPy: %s" % scipy_version)
         logging.debug("Scikit-Learn: %s" % sklearn_version)
-        logging.debug("PyYAML: %s" % yaml_version)
 
         # @TODO: command-line tool versions (SAMtools, etc)
 

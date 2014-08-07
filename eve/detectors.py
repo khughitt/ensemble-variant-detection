@@ -5,64 +5,46 @@ TODO: parallelize execution of different variant callers.
 """
 import logging
 import subprocess
-from yaml import load, Loader
 
 class VariantDetector(object):
     """Base Detector class"""
-    def __init__(self, bam, fasta, conf, working_dir):
+    def __init__(self, bam, fasta, conf, working_dir, threads):
         """Create a detector instance"""
-        self.config = self.parse_config(conf)
+        self.commands = self.parse_command_template(conf)
         self.bam = bam
         self.fasta = fasta
         self.working_dir = working_dir
+        self.threads = threads
 
-    def parse_config(self, filepath):
-        """Parses a YAML configuration file containing options for the variant
+    def parse_command_template(self, filepath):
+        """Parses a configuration file containing options for the variant
            detector"""
-        if filepath.endswith('.yaml'):
-            return load(open(filepath), Loader=Loader)
-        elif filepath.endswith('.txt'):
-            return [x.strip() for x in open(filepath).readline()]
-
-    def get_arg_list(self):
-        """Returns a list of command-line arguments for the detector"""
-        args = [self.config['command']]
-
-        for key in self.config['parameters']:
-            value = self.config['parameters'][key]
-            if value is None:
-                args.append(" %s" % key)
-            elif key.startswith('--'):
-                args.append((" %s=%s" % (key, value)))
-            else:
-                args.append((" %s %s" % (key, value)))
-
-        return(args)
+        return [x.strip() for x in open(filepath).readline()]
 
     def run(self):
         """Runs the given detectors"""
-        logging.debug(" ".join(self.get_arg_list()))
-        print(" ".join(self.get_arg_list()))
-
-        process = subprocess.Popen(self.get_arg_list(),
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-
-        stdout, stderr = process.communicate()
-
-        if stdout:
-            logging.info(stdout)
-        if stderr:
-            logging.error(stderr)
-
-        return process.returncode
+        pass
 
 class GATKDetector(VariantDetector):
     """
     GATKDetector variant detector
     """
-    def __init__(self, bam, fasta, conf, working_dir):
-        super().__init__(bam, fasta, conf, working_dir)
+    def __init__(self, bam, fasta, conf, working_dir, threads):
+        super().__init__(bam, fasta, conf, working_dir, threads)
+
+    def run(self):
+        """Run GATK"""
+        # GATK otput filepath
+        outfile = os.path.join(self.working_dir, 'vcf', 'gatk.vcf')
+
+        cmd = self.commands[0].format(
+            reference=self.fasta, bam=self.bam, outfile,
+            threads=self.max_threads
+        )
+
+        logging.debug(cmd)
+        subprocess.call(cmd, shell=True)
+
 
 class MpileupDetector(VariantDetector):
     """
@@ -71,19 +53,21 @@ class MpileupDetector(VariantDetector):
     This class interfaces with the SAMtools Mpileup utility for detecting
     ___ variants.
     """
-    def __init__(self, bam, fasta, conf, working_dir):
-        super().__init__(bam, fasta, conf, working_dir)
+    def __init__(self, bam, fasta, conf, working_dir, threads):
+        super().__init__(bam, fasta, conf, working_dir, threads)
 
     def run(self):
         """Run the Mpile detection pipeline"""
         # Part 1: mpileup
         bcf_output = os.path.join(self.working_dir, 'vcf', 'var.raw.bcf')
-        cmd1 = self.config[0].format(fasta=self.fasta, bam=self.bam,
-                                     bcf_output=bcf_output)
+        cmd1 = self.commands[0].format(fasta=self.fasta, bam=self.bam,
+                                       bcf_output=bcf_output)
         logging.debug(cmd1)
         subprocess.call(cmd1, shell=True)
 
         # Part 2: vcfutils
         outfile = os.path.join(self.working_dir, 'vcf', 'mpileup.vcf')
-        cmd2 = self.config[1].format(bcf_output=bcf_output, output=outfile)
+        cmd2 = self.commands[1].format(bcf_output=bcf_output, output=outfile)
+        logging.debug(cmd2)
+        subprocess.call(cmd2, shell=True)
 
