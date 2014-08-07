@@ -21,6 +21,8 @@ Python libraries, as well as a number of command-line bioinformatics tools.
 ## Python
 
 - [Python 3](https://www.python.org/downloads/)
+- [Pandas](http://pandas.pydata.org/)
+- [PyVCF](http://pyvcf.readthedocs.org/en/latest/INTRO.html)
 - [scikit-learn](http://scikit-learn.org/stable/)
 
 ## Bioinformatics tools

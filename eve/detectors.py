@@ -61,6 +61,7 @@ class GATKDetector(VariantDetector):
 
         # Clean up
         os.unlink(unfiltered_vcf)
+        os.unlink(unfiltered_vcf + ".idx")
 
         return filtered_vcf
 

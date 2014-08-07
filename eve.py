@@ -8,13 +8,16 @@ detection pipeline.
 """
 import os
 import sys
+import vcf
 import glob
 import logging
 import argparse
 import datetime
 import platform
 import subprocess
+from pandas import DataFrame
 from eve import detectors,mappers
+
 
 class EVE(object):
     """Ensemble Variant Detection"""
@@ -72,11 +75,53 @@ class EVE(object):
 
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
+        df = self.combine_vcfs(vcf_files)
+        df.to_csv(os.path.join(self.working_dir, "combined.csv"))
 
         # run classifier
         # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
 
         # output final VCF
+
+    def combine_vcfs(self, vcf_files):
+        """Parses a collection of VCF files and creates a single matrix
+        containing the calls for each position observed by any of the detection
+        algorithms."""
+        logging.info("Combining output from variant detection tools")
+
+        # Load VCF files
+        unfiltered_vcf_readers = {
+            os.path.basename(x):list(vcf.Reader(open(x))) for x in vcf_files
+        }
+
+        # Remove filtered entries and (for now) non-SNPs
+        filtered_vcf_readers = {}
+
+        for name, reader in unfiltered_vcf_readers.items():
+            filtered = []
+
+            for record in reader:
+                if record.is_snp:
+                    if not record.FILTER or len(record.FILTER) == 0:
+                        filtered.append(record)
+
+            filtered_vcf_readers[name] = filtered
+
+        # Get calls for each algorithm at each position observed by any of the
+        # tools
+        combined_dict = {}
+
+        for name,reader in filtered_vcf_readers.items():
+            combined_dict[name] = {}
+
+            for record in reader:
+                # @TODO: decide how to deal with multiple alleles
+                if len(record.ALT) > 1:
+                    print(record.ALT)
+                combined_dict[name][record.POS] = record.ALT[0]
+
+        # Convert to a DataFrame
+        return DataFrame.from_dict(combined_dict)
 
     def check_fasta_index(self):
         """Checks for a valid FASTA index and creates one if needed"""
