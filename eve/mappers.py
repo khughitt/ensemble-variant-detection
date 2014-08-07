@@ -49,6 +49,7 @@ class BWAMemMapper(Mapper):
         )
         logging.debug(cmd)
 
-        # Run BWA
-        super().run(cmd.split(' '))
+        # Call base Detector.run method
+        args_list = cmd.split(' ')
+        super().run(args_list)
 

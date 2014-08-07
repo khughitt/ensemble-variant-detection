@@ -76,18 +76,14 @@ class MpileupDetector(VariantDetector):
 
     def run(self):
         """Run the Mpile detection pipeline"""
-        # Part1: mpileup
+        # Part 1: mpileup
         bcf_output = os.path.join(self.working_dir, 'vcf', 'var.raw.bcf')
         cmd1 = self.config[0].format(fasta=self.fasta, bam=self.bam,
                                      bcf_output=bcf_output)
-        print(cmd1)
+        logging.debug(cmd1)
+        subprocess.call(cmd1, shell=True)
 
-        # NOTE: use shell=True for Popen...
-
-        # hard-coded for now...
-        # samtools mpileup -uf /scratch/summerschool/Data/Reference_Genomes/hsa_37.p5/hs_ref_GRCh37.p5_chr22.fa
-        # /scratch/summerschool/Data/Data_From_Tuebingen/NA12878_01.bam \
-        # | bcftools view -bvcg - \
-        # > var.raw.bcf \
-
+        # Part 2: vcfutils
+        outfile = os.path.join(self.working_dir, 'vcf', 'mpileup.vcf')
+        cmd2 = self.config[1].format(bcf_output=bcf_output, output=outfile)
 
