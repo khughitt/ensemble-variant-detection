@@ -82,6 +82,8 @@ class MpileupDetector(VariantDetector):
                                      bcf_output=bcf_output)
         print(cmd1)
 
+        # NOTE: use shell=True for Popen...
+
         # hard-coded for now...
         # samtools mpileup -uf /scratch/summerschool/Data/Reference_Genomes/hsa_37.p5/hs_ref_GRCh37.p5_chr22.fa
         # /scratch/summerschool/Data/Data_From_Tuebingen/NA12878_01.bam \

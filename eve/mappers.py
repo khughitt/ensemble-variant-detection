@@ -19,7 +19,8 @@ class Mapper(object):
         """Runs the given mappers"""
         process = subprocess.Popen(args,
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stderr=subprocess.PIPE,
+                                   shell=True)
         stdout, stderr = process.communicate()
 
         if stdout:
