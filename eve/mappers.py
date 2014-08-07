@@ -7,11 +7,13 @@ import subprocess
 
 class Mapper(object):
     """Base read mapper class"""
-    def __init__(self, fasta1, fasta2, outfile):
+    def __init__(self, reference, fastq1, fastq2, outfile, max_threads):
         """Create a detector instance"""
-        self.fasta1 = fasta1
-        self.fasta2 = fasta2
+        self.reference = reference
+        self.fastq1 = fastq1
+        self.fastq2 = fastq2
         self.outfile = outfile
+        self.max_threads = max_threads
 
     def run(self, args):
         """Runs the given mappers"""
@@ -29,15 +31,16 @@ class Mapper(object):
 
 class BWAMemMapper(Mapper):
     """Burrows-Wheeler Aligner Mapper class"""
-    def __init__(self, fasta1, fasta2, outfile):
-        super().__init__(fasta1, fasta2, outfile)
+    def __init__(self, reference, fastq1, fastq2, outfile, max_threads):
+        super().__init__(reference, fastq1, fastq2, outfile, max_threads)
 
     def run(self):
         """Run BWA mapping command"""
         # @TODO: accept number of threads as argument
-        cmd = "bwa mem -t {threads} {fasta1} {fasta2} > {output}".format(
-                    fasta1=self.fasta1, fasta2=self.fasta2,
-                    threads=32, output=self.outfile
+        cmd = "bwa mem -t {threads} {reference} {fastq1} {fastq2} > {output}".format(
+                    reference=self.reference,
+                    fastq1=self.fastq1, fastq2=self.fastq2,
+                    threads=self.max_threads, output=self.outfile
         )
         logging.debug(cmd)
 

@@ -33,7 +33,8 @@ class EVE(object):
             filename = "aln_%s.sam" % prefix
             outfile = os.path.join(self.working_dir, filename)
 
-            self.mapper = mappers.BWAMemMapper(reads1, reads2, outfile)
+            self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
+                                               outfile, self.args.max_threads)
 
 
     def run(self):
@@ -186,6 +187,8 @@ class EVE(object):
                             help='Location of GFF annotation file to use.')
         parser.add_argument('-m', '--mapper', default='bwa',
                             help='Mapper to use for read alignment')
+        parser.add_argument('-t', '--max-threads', default='4',
+                            help='Maximum number of threads to use')
         parser.add_argument('-d', '--variant-detectors',
                             default='gatk,mpileup,varscan',
                             help=('Comma-separated list of the variant '
