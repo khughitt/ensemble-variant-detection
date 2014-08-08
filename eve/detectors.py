@@ -134,12 +134,15 @@ class VarScanDetector(VariantDetector):
         subprocess.call(cmd2, shell=True)
 
         # Step 3: pileup2indel
-        cmd3 = self.commands[2].format(
-            jar=self.location, mpileup_output=mpileup_outfile,
-            varscan_indels=varscan_indels_vcf
-        )
+        # (skipping this for now to speed things up...)
+        #cmd3 = self.commands[2].format(
+        #    jar=self.location, mpileup_output=mpileup_outfile,
+        #    varscan_indels=varscan_indels_vcf
+        #)
 
-        logging.debug(cmd3)
-        subprocess.call(cmd3, shell=True)
+        #logging.debug(cmd3)
+        #subprocess.call(cmd3, shell=True)
 
-        return [varscan_snps_vcf, varscan_indels_vcf]
+        #return [varscan_snps_vcf, varscan_indels_vcf]
+        return varscan_snps_vcf
+

@@ -122,9 +122,12 @@ class EVE(object):
         # tools
         combined_dict = {name:{} for name in filtered_vcf_readers.keys()}
         combined_dict['depth'] = {}
-        combined_dict['qual'] = {}
 
         for name,reader in filtered_vcf_readers.items():
+            # create a new column for the quality scores
+            qual_name = name + "_qual"
+            combined_dict[qual_name] = {}
+
             for record in reader:
                 # @TODO: decide how to deal with multiple alleles
                 # i.e.: len(record.ALT) > 1
@@ -155,7 +158,7 @@ class EVE(object):
                 # Add entries to the dictionary
                 combined_dict['depth'][record.POS] = depth
                 combined_dict[name][record.POS] = record.ALT[0]
-                combined_dict['qual'][record.POS] = qual_score
+                combined_dict[qual_name][record.POS] = qual_score
 
         # Convert to a DataFrame
         return DataFrame.from_dict(combined_dict)
