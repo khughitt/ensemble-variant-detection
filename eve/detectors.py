@@ -31,8 +31,8 @@ class GATKDetector(VariantDetector):
     """
     GATKDetector variant detector
     """
-    def __init__(self, bam, fasta, conf, working_dir, threads):
-        super().__init__(bam, fasta, conf, working_dir, threads)
+    def __init__(self, bam, fasta, conf, working_dir, threads, location):
+        super().__init__(bam, fasta, conf, working_dir, threads, location)
 
     def run(self):
         """Run GATK"""
@@ -73,8 +73,8 @@ class MpileupDetector(VariantDetector):
     This class interfaces with the SAMtools Mpileup utility for detecting
     ___ variants.
     """
-    def __init__(self, bam, fasta, conf, working_dir, threads):
-        super().__init__(bam, fasta, conf, working_dir, threads)
+    def __init__(self, bam, fasta, conf, working_dir, threads, location):
+        super().__init__(bam, fasta, conf, working_dir, threads, location)
 
     def run(self):
         """Run the Mpile detection pipeline"""
@@ -101,8 +101,8 @@ class VarScanDetector(VariantDetector):
     """
     VarScanDetector variant detector
     """
-    def __init__(self, bam, fasta, conf, working_dir, threads):
-        super().__init__(bam, fasta, conf, working_dir, threads)
+    def __init__(self, bam, fasta, conf, working_dir, threads, location):
+        super().__init__(bam, fasta, conf, working_dir, threads, location)
 
     def run(self):
         """Run VarScan"""

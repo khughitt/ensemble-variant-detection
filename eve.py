@@ -33,6 +33,9 @@ class EVE(object):
         self.initialize_logger()
         self.log_system_info()
 
+        # load configuration
+        self.load_config()
+
         # check for FASTA index and create if necessary
         self.check_fasta_index()
 
@@ -91,9 +94,16 @@ class EVE(object):
         logging.info("Combining output from variant detection tools")
 
         # Load VCF files
-        unfiltered_vcf_readers = {
-            os.path.basename(x):list(vcf.Reader(open(x))) for x in vcf_files
-        }
+        unfiltered_vcf_readers = {}
+
+        for filename in vcf_files:
+            name = os.path.splitext(os.path.basename(filename))[0]
+
+            # if indels, skip...
+            if name == 'varscan_indels':
+                continue
+
+            unfiltered_vcf_readers[name] = vcf.Reader(open(filename))
 
         # Remove filtered entries and (for now) non-SNPs
         filtered_vcf_readers = {}
@@ -110,16 +120,12 @@ class EVE(object):
 
         # Get calls for each algorithm at each position observed by any of the
         # tools
-        combined_dict = {}
+        combined_dict = {name:{} for name in filtered_vcf_readers.keys()}
+        combined_dict['depth'] = {}
+        combined_dict['qual'] = {}
 
         for name,reader in filtered_vcf_readers.items():
-            # quality feature name
-            qual_name = "%s_qual" % name
-
-            combined_dict[name] = {}
-            combined_dict[qual_name] = {}
-
-            for i, record in enumerate(reader):
+            for record in reader:
                 # @TODO: decide how to deal with multiple alleles
                 # i.e.: len(record.ALT) > 1
 
@@ -139,21 +145,17 @@ class EVE(object):
                         qual_score = record.QUAL / record.INFO['DP']
 
                 # Determine read depth (only need once...)
-                if i == 0:
-                    try:
-                        # GATK
-                        depth = record.INFO['DP']
-                    except KeyError:
-                        try:
-                            # VarScan
-                            depth = INFO['ADP']
-                        except KeyError:
-                            depth = INFO['DP']
-                    # Add depth to dict
-                    combined_dict["depth"][record.POS] = depth
+                try:
+                    # GATK / mpileup
+                    depth = record.INFO['DP']
+                except KeyError:
+                    # VarScan
+                    depth = record.INFO['ADP']
 
+                # Add entries to the dictionary
+                combined_dict['depth'][record.POS] = depth
                 combined_dict[name][record.POS] = record.ALT[0]
-                combined_dict[qual_name][record.POS] = qual_score
+                combined_dict['qual'][record.POS] = qual_score
 
         # Convert to a DataFrame
         return DataFrame.from_dict(combined_dict)
