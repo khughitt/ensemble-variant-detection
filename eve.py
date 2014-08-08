@@ -51,7 +51,7 @@ class EVE(object):
             outfile = os.path.join(self.working_dir, 'mapped', filename)
 
             self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
-                                               outfile, self.args.max_threads)
+                                               outfile, self.args.num_threads)
 
     def run(self):
         """Main application process"""
@@ -80,12 +80,27 @@ class EVE(object):
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
         df = self.combine_vcfs(vcf_files)
-        df.to_csv(os.path.join(self.working_dir, "combined.csv"))
+        df.to_csv(os.path.join(self.working_dir, "combined.csv"),
+                  index_label='position')
 
         # run classifier
         # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
+        if self.args.training_set:
+            self.build_training_set(df)
 
         # output final VCF
+
+    def build_training_set(df):
+        """Adds actual values to the end of the combined dataset"""
+        import numpy as np
+        from sklearn.ensemble import RandomForestClassifier
+
+        # load VCF containing true answers
+        # For now, assuming Genome in a Bottle VCF...
+        reader = vcf.Reader(open(self.args.training_set))
+
+        for record in reader:
+            pass
 
     def combine_vcfs(self, vcf_files):
         """Parses a collection of VCF files and creates a single matrix
@@ -206,7 +221,7 @@ class EVE(object):
 
             self.detectors.append(cls(
                 self.args.bam, self.args.fasta, conf, self.working_dir,
-                self.args.max_threads, location
+                self.args.num_threads, location
             ))
 
     def create_working_directories(self):
@@ -312,8 +327,10 @@ class EVE(object):
                             help='Location of GFF annotation file to use.')
         parser.add_argument('-m', '--mapper', default='bwa',
                             help='Mapper to use for read alignment')
-        parser.add_argument('-t', '--max-threads', default='4',
+        parser.add_argument('-n', '--num-threads', default='4',
                             help='Maximum number of threads to use')
+        parser.add_argument('-t', '--training-set',
+                            help='Run EVE in training mode')
         parser.add_argument('-d', '--variant-detectors',
                             default='gatk,mpileup,varscan',
                             help=('Comma-separated list of the variant '
