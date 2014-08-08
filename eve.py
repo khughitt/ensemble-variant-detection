@@ -90,7 +90,7 @@ class EVE(object):
 
         # output final VCF
 
-    def build_training_set(df):
+    def build_training_set(self, df):
         """Adds actual values to the end of the combined dataset"""
         import numpy as np
         from sklearn.ensemble import RandomForestClassifier
@@ -99,8 +99,19 @@ class EVE(object):
         # For now, assuming Genome in a Bottle VCF...
         reader = vcf.Reader(open(self.args.training_set))
 
+        # Add "truth" values
+        df['actual'] = np.repeat(float('nan'), df.shape[0])
+
         for record in reader:
-            pass
+            #if record.POS in df['position'].values:
+            if record.POS in df.index:
+                # there is probably a cleaner way to do this, but I can't
+                # think of it right now...
+                #df.loc[df[df.position == pos].index, 'actual'] = record.ALT[0]
+                df.loc[df[df.index == record.POS].index, 'actual'] = record.ALT[0]
+
+        df.to_csv(os.path.join(self.working_dir, "combined_training_set.csv"),
+                  index_label='position')
 
     def combine_vcfs(self, vcf_files):
         """Parses a collection of VCF files and creates a single matrix
