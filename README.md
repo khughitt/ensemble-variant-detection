@@ -62,6 +62,17 @@ python eve.py -g path/to/annotations.gff    \
               accepted_hits.bam
 ```
 
+## Training example
+
+```
+python eve.py -g path/to/annotations.gff    \
+              -f path/to/genome.fasta       \
+              -o output.vcf                 \
+              --train=actual_snps.vcf       \
+              --num-threads=32              \
+              reads_1.fastq reads_2.fastq
+```
+
 ## A more complex example:
 
 ```
