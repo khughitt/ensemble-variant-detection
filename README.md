@@ -1,4 +1,4 @@
-EVE: Ensemble Variant DEtection
+EVE: Ensemble Variant Detection
 ===============================
 
 Andre Hennig, Keith Hughitt, Alexander Peltzer, Shrutii Sarda, Kay Nieselt

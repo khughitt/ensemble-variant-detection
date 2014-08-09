@@ -27,7 +27,7 @@ class EVE(object):
         self.args = self.parse_args(argv)
 
         # determine working/output directory to use
-        if self.args.output_dir == 'output/{timestamp}'
+        if self.args.output_dir == 'output/{timestamp}':
             now = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
             self.output_dir = os.path.join(self.args.output_dir, now)
         else:
@@ -348,7 +348,7 @@ class EVE(object):
                             default='gatk,mpileup,varscan',
                             help=('Comma-separated list of the variant '
                                   'detectors to be used.'))
-        parser.add_argument('-o', '--output-directory',
+        parser.add_argument('-o', '--output-dir',
                             default='output/{timestamp}',
                             help=('Location to store intermediate and output '
                                   'files'))
