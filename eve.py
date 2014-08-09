@@ -157,8 +157,11 @@ class EVE(object):
 
         plt.barh(pos, feature_importance[sorted_idx], align='center')
         plt.yticks(pos, test_set[features].columns[sorted_idx])
+        plt.xlabel('Relative feature importance')
+        plt.ylabel('Feature name')
         plt.title('EVE Random Forest Variable Importance');
-        plt.savefig(os.path.join(self.output_dir, 'EVE_Variable_Importance.png'))
+        plt.savefig(os.path.join(self.output_dir,
+                    'EVE_Variable_Importance.png'), bbox_inches='tight')
 
     def train_random_forest(self, df, clf_filepath):
         """
