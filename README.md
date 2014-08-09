@@ -1,7 +1,7 @@
-Ensemble Variant Detection
-==========================
+EVE: Ensemble Variant DEtection
+===============================
 
-Andre Hennig, Keith Hughitt, Alexander Peltzer, Shrutii Sarda
+Andre Hennig, Keith Hughitt, Alexander Peltzer, Shrutii Sarda, Kay Nieselt
 
 Overview
 --------
@@ -49,7 +49,6 @@ Usage
 ```
 python eve.py -g path/to/annotations.gff    \
               -f path/to/genome.fasta       \
-              -o output.vcf                 \
               reads_1.fastq reads_2.fastq
 ```
 
@@ -58,7 +57,6 @@ python eve.py -g path/to/annotations.gff    \
 ```
 python eve.py -g path/to/annotations.gff    \
               -f path/to/genome.fasta       \
-              -o output.vcf                 \
               accepted_hits.bam
 ```
 
@@ -67,7 +65,6 @@ python eve.py -g path/to/annotations.gff    \
 ```
 python eve.py -g path/to/annotations.gff    \
               -f path/to/genome.fasta       \
-              -o output.vcf                 \
               --train=actual_snps.vcf       \
               --num-threads=32              \
               reads_1.fastq reads_2.fastq
@@ -81,7 +78,8 @@ python eve.py --gff=path/to/annotations.gff            \
               --mapper=bowtie2                         \
               --variant-detectors=gatk,mpileup,varscan \
               --working-directory=/scratch/eve         \
-              --output=out.vcf                         \
+              --output-dir=/scratch/eve-output         \
+              --num-threads=32                         \
               reads_1.fastq.gz reads_2.fastq.gz
 ```
 
@@ -91,6 +89,7 @@ TODO
 - Enable setting of Picard location
 - Incorporate coverage,quality scores,sequence complexity and GC richness
   into classification.
+- Include trimming/QA step before mapping?
 - Check for FASTA indices
 - unit testing / CI
 - sphinx documentation
