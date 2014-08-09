@@ -26,8 +26,15 @@ class EVE(object):
         # parse arguments
         self.args = self.parse_args(argv)
 
+        # determine working/output directory to use
+        if self.args.output_dir == 'output/{timestamp}'
+            now = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            self.output_dir = os.path.join(self.args.output_dir, now)
+        else:
+            self.output_dir = self.args.output_dir
+
         # create working directories
-        self.create_working_directories()
+        self.create_output_directories()
 
         # initialize logger
         self.initialize_logger()
@@ -48,7 +55,7 @@ class EVE(object):
             prefix = os.path.basename(
                         os.path.commonprefix([reads1, reads2])).strip("_")
             filename = "aln_%s.sam" % prefix
-            outfile = os.path.join(self.working_dir, 'mapped', filename)
+            outfile = os.path.join(self.output_dir, 'mapped', filename)
 
             self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
                                                outfile, self.args.num_threads)
@@ -80,7 +87,7 @@ class EVE(object):
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
         df = self.combine_vcfs(vcf_files)
-        df.to_csv(os.path.join(self.working_dir, "combined.csv"),
+        df.to_csv(os.path.join(self.output_dir, "combined.csv"),
                   index_label='position')
 
         # run classifier
@@ -110,7 +117,7 @@ class EVE(object):
                 #df.loc[df[df.position == pos].index, 'actual'] = record.ALT[0]
                 df.loc[df[df.index == record.POS].index, 'actual'] = record.ALT[0]
 
-        df.to_csv(os.path.join(self.working_dir, "combined_training_set.csv"),
+        df.to_csv(os.path.join(self.output_dir, "combined_training_set.csv"),
                   index_label='position')
 
     def combine_vcfs(self, vcf_files):
@@ -231,18 +238,15 @@ class EVE(object):
             (cls, location) = mapping[detector]
 
             self.detectors.append(cls(
-                self.args.bam, self.args.fasta, conf, self.working_dir,
+                self.args.bam, self.args.fasta, conf, self.output_dir,
                 self.args.num_threads, location
             ))
 
-    def create_working_directories(self):
+    def create_output_directories(self):
         """Creates directories to output intermediate files into"""
-        now = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
-
-        self.working_dir = os.path.join(self.args.working_directory, now)
 
         for subdir in ['mapped', 'vcf', 'mpileup']:
-            path = os.path.join(self.working_dir, subdir)
+            path = os.path.join(self.output_dir, subdir)
             if not os.path.isdir(path):
                 os.makedirs(path)
 
@@ -250,7 +254,7 @@ class EVE(object):
         """Initializes a logger instance"""
         logging.basicConfig(level=logging.DEBUG,
                 format='(%(asctime)s)[%(levelname)s] %(message)s',
-                filename=os.path.join(self.working_dir, 'eve.log'))
+                filename=os.path.join(self.output_dir, 'eve.log'))
 
         # log to console as well
         console = logging.StreamHandler()
@@ -330,8 +334,6 @@ class EVE(object):
                             help=('Input paired-end Illumina reads or '
                                   'alignment. Supported file formats include '
                                   '.fastq, .fastq.gz, and .bam'))
-        parser.add_argument('-o', '--output',
-                            help='Location to save final VCF output to.')
         parser.add_argument('-f', '--fasta', required=True,
                             help='Location of genome sequence file to use.')
         parser.add_argument('-g', '--gff', required=True,
@@ -346,9 +348,10 @@ class EVE(object):
                             default='gatk,mpileup,varscan',
                             help=('Comma-separated list of the variant '
                                   'detectors to be used.'))
-        parser.add_argument('-w', '--working-directory',
-                            default='output/',
-                            help='Location to store intermediate files')
+        parser.add_argument('-o', '--output-directory',
+                            default='output/{timestamp}',
+                            help=('Location to store intermediate and output '
+                                  'files'))
         args = parser.parse_args()
 
         # validate input arguments
