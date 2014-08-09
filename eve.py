@@ -280,7 +280,15 @@ class EVE(object):
             reader = DictReader(fp, delimiter='\t', fieldnames=wgsim_fields)
 
             for row in reader:
-                pass
+                # skip insertions, etc.
+                if row['before'] not in ['A', 'G', 'C', 'T']:
+                    continue
+                #if row['after'] not in iupac.keys():
+                if row['after'] not in ['A', 'G', 'C', 'T']:
+                    continue
+                if row['pos'] in df.index:
+                    df.loc[df[df.index == row['pos']].index, 'actual'] = row['after']
+
         else:
             # If training set does not come from wgsim, for now, assume
             # it is a VCF from Genome in a Bottle...
