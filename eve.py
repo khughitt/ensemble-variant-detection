@@ -19,6 +19,7 @@ import subprocess
 import configparser
 import matplotlib.pyplot as plt
 import numpy as np
+from csv import DictReader
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder,Imputer
 from sklearn.externals import joblib
@@ -34,7 +35,7 @@ class EVE(object):
         # determine working/output directory to use
         if self.args.output_dir == 'output/{timestamp}':
             now = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            self.output_dir = os.path.join(self.args.output_dir, now)
+            self.output_dir = self.args.output_dir.format(timestamp=now)
         else:
             self.output_dir = self.args.output_dir
 
@@ -63,9 +64,12 @@ class EVE(object):
         mapped_reads = os.path.join(self.output_dir, 'mapped', sam_filepath)
 
         # load mapper
-        if 'bam' not in self.args and not os.path.exists(mapped_reads):
-            self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
-                                               mapped_reads, self.args.num_threads)
+        if 'bam' not in self.args:
+            if not os.path.exists(mapped_reads):
+                self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
+                                                mapped_reads, self.args.num_threads)
+            else:
+                self.args.bam = mapped_reads.replace('.sam', '.bam')
 
     def run(self):
         """Main application process"""
@@ -94,6 +98,8 @@ class EVE(object):
         # normalize output from variant detectors and read in as either a NumPy
         # matrix or pandas DataFrame
         df = self.combine_vcfs(vcf_files)
+
+
         df.to_csv(os.path.join(self.output_dir, "combined.csv"),
                   index_label='position')
 
@@ -105,16 +111,24 @@ class EVE(object):
             # check to see if classifier already exists
             # @TODO encode parameter information in filepath to ensure same
             # settings were used
-            if not os.path.exists(clf_filepath):
-                training_df = self.build_training_set(df)
-                (classifier, training_set, test_set, features, target_classes) = (
-                    self.train_random_forest(training_df, clf_filepath)
-                )
-            else:
-                classifier = joblib.load(clf_filepath)
+            #if not os.path.exists(clf_filepath):
+            training_df = self.build_training_set(df)
+
+            # cast fields to string in case results come directly from PyVCF
+            # in which case the values would be VCF object instances (e.g.
+            # vcf.model._Substitution.
+            for x in ['gatk_filtered', 'mpileup', 'varscan_snps']:
+                training_df[x] = training_df[x].astype(str)
+
+            # training
+            (classifier, training_set, test_set, features, target_classes) = (
+                self.train_random_forest(training_df, clf_filepath)
+            )
+            #else:
+            #    classifier = joblib.load(clf_filepath)
 
         # perform prediction
-        self.predict_variants(self, classifier, test_set, features,
+        self.predict_variants(classifier, test_set, features,
                               target_classes)
 
         # output final VCF
@@ -139,9 +153,9 @@ class EVE(object):
         pos = np.arange(sorted_idx.shape[0]) + .5
 
         plt.barh(pos, feature_importance[sorted_idx], align='center')
-        plt.yticks(pos, df[features].columns[sorted_idx])
+        plt.yticks(pos, test_set[features].columns[sorted_idx])
         plt.title('EVE Random Forest Variable Importance');
-        savefig(os.path.join(self.output_dir, 'EVE_Variable_Importance.png'))
+        plt.savefig(os.path.join(self.output_dir, 'EVE_Variable_Importance.png'))
 
     def train_random_forest(self, df, clf_filepath):
         """
@@ -187,6 +201,7 @@ class EVE(object):
         for orig in ['gatk_filtered', 'mpileup', 'varscan_snps']:
             # replace NaNs to be consistent with target
             df[orig] = df[orig].replace(float('nan'), 'X')
+
             one_hot = pandas.get_dummies(df[orig])
             for val in one_hot.columns:
                 new = "%s=%s" % (orig, val)
@@ -198,12 +213,15 @@ class EVE(object):
 
         # add quality scores and depth to the list of features to test
         features = features + ['depth',  'gatk_filtered_qual',  'mpileup_qual',
-                            'varscan_snps_qual']
+                               'varscan_snps_qual']
 
         # replace nans and encode categorical variable as integers
         df.actual = df.actual.replace(float('nan'), 'X')
+        df.actual = df.actual.astype(str)
+
         encoder = LabelEncoder()
         df.actual = encoder.fit_transform(df.actual)
+
         #encoder.fit(df.actual)
         #df.actual = encoder.transform(df.actual)
 
@@ -237,20 +255,44 @@ class EVE(object):
         import numpy as np
         from sklearn.ensemble import RandomForestClassifier
 
-        # load VCF containing true answers
-        # For now, assuming Genome in a Bottle VCF...
-        reader = vcf.Reader(open(self.args.training_set))
+        # IUPAC codes (needed to parse wgsim output)
+        iupac = {
+            'R': ['A', 'G'],
+            'Y': ['C', 'T'],
+            'S': ['G', 'C'],
+            'W': ['A', 'T'],
+            'K': ['G', 'T'],
+            'M': ['A', 'C'],
+            'B': ['C', 'G', 'T'],
+            'D': ['A', 'G', 'T'],
+            'H': ['A', 'C', 'T'],
+            'V': ['A', 'C', 'G'],
+            'N': ['A', 'G', 'C', 'T']
+        }
 
         # Add "truth" values
         df['actual'] = np.repeat(float('nan'), df.shape[0])
 
-        for record in reader:
-            #if record.POS in df['position'].values:
-            if record.POS in df.index:
-                # there is probably a cleaner way to do this, but I can't
-                # think of it right now...
-                #df.loc[df[df.position == pos].index, 'actual'] = record.ALT[0]
-                df.loc[df[df.index == record.POS].index, 'actual'] = record.ALT[0]
+        # wgsim
+        if (self.args.wgsim):
+            fp = open(self.args.training_set)
+            wgsim_fields = ['chr', 'pos', 'before', 'after', 'haplotype']
+            reader = DictReader(fp, delimiter='\t', fieldnames=wgsim_fields)
+
+            for row in reader:
+                pass
+        else:
+            # If training set does not come from wgsim, for now, assume
+            # it is a VCF from Genome in a Bottle...
+            # load VCF containing true answers
+            reader = vcf.Reader(open(self.args.training_set))
+
+            for record in reader:
+                #if record.POS in df['position'].values:
+                if record.POS in df.index:
+                    # there is probably a cleaner way to do this, but I can't
+                    # think of it right now...
+                    df.loc[df[df.index == record.POS].index, 'actual'] = record.ALT[0]
 
         df.to_csv(os.path.join(self.output_dir, "combined_training_set.csv"),
                   index_label='position')
