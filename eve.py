@@ -17,13 +17,16 @@ import datetime
 import platform
 import subprocess
 import configparser
-import matplotlib.pyplot as plt
 import numpy as np
 from csv import DictReader
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder,Imputer
 from sklearn.externals import joblib
 from eve import detectors,mappers
+
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 
 class EVE(object):
