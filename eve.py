@@ -46,8 +46,11 @@ class EVE(object):
         # check for FASTA index and create if necessary
         self.check_fasta_index()
 
+        # filepath for mapped reads
+        mapped_reads = os.path.join(self.output_dir, 'mapped', filename)
+
         # load mapper
-        if 'bam' not in self.args:
+        if 'bam' not in self.args and not os.path.exists(mapped_reads):
             # split fastq reads into two variables
             (reads1, reads2) = self.args.input_reads
 
@@ -55,15 +58,14 @@ class EVE(object):
             prefix = os.path.basename(
                         os.path.commonprefix([reads1, reads2])).strip("_")
             filename = "aln_%s.sam" % prefix
-            outfile = os.path.join(self.output_dir, 'mapped', filename)
 
             self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
-                                               outfile, self.args.num_threads)
+                                               mapped_reads, self.args.num_threads)
 
     def run(self):
         """Main application process"""
         # map reads
-        if 'bam' not in self.args:
+        if hasattr(self, 'mapper'):
             logging.info("Mapping reads")
             self.args.bam = self.mapper.run()
 
