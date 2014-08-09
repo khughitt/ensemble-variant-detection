@@ -289,8 +289,9 @@ class EVE(object):
                 #if row['after'] not in iupac.keys():
                 if row['after'] not in ['A', 'G', 'C', 'T']:
                     continue
-                if row['pos'] in df.index:
-                    df.loc[df[df.index == row['pos']].index, 'actual'] = row['after']
+                pos = int(row['pos'])
+                if pos in df.index:
+                    df.loc[df[df.index == pos].index, 'actual'] = row['after']
 
         else:
             # If training set does not come from wgsim, for now, assume
