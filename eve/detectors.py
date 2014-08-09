@@ -42,6 +42,11 @@ class GATKDetector(VariantDetector):
         unfiltered_vcf = os.path.join(self.output_dir, 'vcf', 'gatk_unfiltered.vcf')
         filtered_vcf = os.path.join(self.output_dir, 'vcf', 'gatk_filtered.vcf')
 
+        # If output files already exist, stop here
+        if os.path.exists(filtered_vcf):
+            logging.info("GATK output already exists. Skipping...")
+            return filtered_vcf
+
         # Find all SNPs and indels, regardless of coverage
         cmd = self.commands[0].format(
             jar=self.location, reference=self.fasta, bam=self.bam,
@@ -80,15 +85,25 @@ class MpileupDetector(VariantDetector):
         """Run the Mpile detection pipeline"""
         # Part 1: mpileup
         logging.info("Running Mpileup")
+
+        # output filepaths
         bcf_output = os.path.join(self.output_dir, 'vcf', 'var.raw.bcf')
+        vcf_output = os.path.join(self.output_dir, 'vcf', 'mpileup.vcf')
+
+        # If output files already exist, stop here
+        if os.path.exists(vcf_output):
+            logging.info("Mpileup output already exists. Skipping...")
+            return vcf_output
+
+        # Otherwise run Mpileup
         cmd1 = self.commands[0].format(fasta=self.fasta, bam=self.bam,
                                        bcf_output=bcf_output)
         logging.debug(cmd1)
         subprocess.call(cmd1, shell=True)
 
         # Part 2: vcfutils
-        outfile = os.path.join(self.output_dir, 'vcf', 'mpileup.vcf')
-        cmd2 = self.commands[1].format(bcf_output=bcf_output, output=outfile)
+        cmd2 = self.commands[1].format(bcf_output=bcf_output,
+                                       output=vcf_output)
         logging.debug(cmd2)
         subprocess.call(cmd2, shell=True)
 
@@ -115,6 +130,11 @@ class VarScanDetector(VariantDetector):
                                        'varscan_snps.vcf')
         varscan_indels_vcf = os.path.join(self.output_dir, 'vcf',
                                           'varscan_indels.vcf')
+
+        # If output files already exist, stop here
+        if os.path.exists(varscan_snps_vcf):
+            logging.info("VarScan output already exists. Skipping...")
+            return varscan_snps_vcf
 
         # Step 1: mpileup
         cmd1 = self.commands[0].format(
