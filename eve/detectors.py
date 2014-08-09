@@ -110,7 +110,7 @@ class MpileupDetector(VariantDetector):
         # Cleanup
         os.unlink(bcf_output)
 
-        return outfile
+        return vcf_output
 
 class VarScanDetector(VariantDetector):
     """

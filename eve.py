@@ -10,13 +10,18 @@ import os
 import sys
 import vcf
 import glob
+import pandas
 import logging
 import argparse
 import datetime
 import platform
 import subprocess
 import configparser
-from pandas import DataFrame
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder,Imputer
+from sklearn.externals import joblib
 from eve import detectors,mappers
 
 
@@ -46,19 +51,19 @@ class EVE(object):
         # check for FASTA index and create if necessary
         self.check_fasta_index()
 
+        # split fastq reads into two variables
+        (reads1, reads2) = self.args.input_reads
+
+        # output file
+        prefix = os.path.basename(
+                    os.path.commonprefix([reads1, reads2])).strip("_")
+        sam_filepath = "aln_%s.sam" % prefix
+
         # filepath for mapped reads
-        mapped_reads = os.path.join(self.output_dir, 'mapped', filename)
+        mapped_reads = os.path.join(self.output_dir, 'mapped', sam_filepath)
 
         # load mapper
         if 'bam' not in self.args and not os.path.exists(mapped_reads):
-            # split fastq reads into two variables
-            (reads1, reads2) = self.args.input_reads
-
-            # output file
-            prefix = os.path.basename(
-                        os.path.commonprefix([reads1, reads2])).strip("_")
-            filename = "aln_%s.sam" % prefix
-
             self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
                                                mapped_reads, self.args.num_threads)
 
@@ -95,9 +100,137 @@ class EVE(object):
         # run classifier
         # (http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
         if self.args.training_set:
-            self.build_training_set(df)
+            clf_filepath = os.path.join(self.output_dir, 'random_forest.pkl')
+
+            # check to see if classifier already exists
+            # @TODO encode parameter information in filepath to ensure same
+            # settings were used
+            if not os.path.exists(clf_filepath):
+                training_df = self.build_training_set(df)
+                (classifier, training_set, test_set, features, target_classes) = (
+                    self.train_random_forest(training_df, clf_filepath)
+                )
+            else:
+                classifier = joblib.load(clf_filepath)
+
+        # perform prediction
+        self.predict_variants(self, classifier, test_set, features,
+                              target_classes)
 
         # output final VCF
+
+    def predict_variants(self, classifier, test_set, features, target_classes):
+        """Uses a trained Random Forest classifier to predict variants"""
+        cls_predict = classifier.predict(test_set[features])
+
+        # map integer predictions back to the original classes
+        predictions = target_classes[cls_predict]
+        actual = target_classes[np.array(test_set['actual'])]
+
+        pandas.crosstab(actual, predictions,
+                        rownames=['actual'], colnames=['preds'])
+
+        # variable importantance
+        # http://nbviewer.ipython.org/github/rauanmaemirov/kaggle-titanic101/blob/master/Titanic101.ipynb
+        feature_importance = classifier.feature_importances_
+        feature_importance = 100.0 * (feature_importance / feature_importance.max())
+
+        sorted_idx = np.argsort(feature_importance)
+        pos = np.arange(sorted_idx.shape[0]) + .5
+
+        plt.barh(pos, feature_importance[sorted_idx], align='center')
+        plt.yticks(pos, df[features].columns[sorted_idx])
+        plt.title('EVE Random Forest Variable Importance');
+        savefig(os.path.join(self.output_dir, 'EVE_Variable_Importance.png'))
+
+    def train_random_forest(self, df, clf_filepath):
+        """
+        Trains a random forest classifier on the specified DataFrame.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            A pandas DataFrame containing both the feature and target columns
+            to use for training.
+        clf_filepath : str
+            Filepath to store classifier at after training.
+
+        Returns
+        -------
+        classifier : sklearn.ensemble.RandomForestClassifier
+            A trained scikit.learn RandomForestClassifier instance instance.
+        training_set : DataFrame
+            Training set DataFrame
+        test_set : DataFrame
+            Test set DataFrame
+        features : list
+            List of feature names used for classification
+        target_classes : list
+            List of target classes
+
+        TODO
+        ----
+        * Generalize code to handle arbitrary features.
+        * Cross-validation
+          (http://scikit-learn.org/stable/modules/cross_validation.html)
+
+        References
+        ----------
+        |http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+        |http://scikit-learn.org/stable/tutorial/basic/tutorial.html#model-persistence
+        |http://blog.yhathq.com/posts/random-forests-in-python.html
+
+        """
+        # Encode categorical features using one hot encoding
+        features = []
+
+        for orig in ['gatk_filtered', 'mpileup', 'varscan_snps']:
+            # replace NaNs to be consistent with target
+            df[orig] = df[orig].replace(float('nan'), 'X')
+            one_hot = pandas.get_dummies(df[orig])
+            for val in one_hot.columns:
+                new = "%s=%s" % (orig, val)
+                df[new] = one_hot[val]
+                features.append(new)
+
+            # delete original column
+            df = df.drop(orig, 1)
+
+        # add quality scores and depth to the list of features to test
+        features = features + ['depth',  'gatk_filtered_qual',  'mpileup_qual',
+                            'varscan_snps_qual']
+
+        # replace nans and encode categorical variable as integers
+        df.actual = df.actual.replace(float('nan'), 'X')
+        encoder = LabelEncoder()
+        df.actual = encoder.fit_transform(df.actual)
+        #encoder.fit(df.actual)
+        #df.actual = encoder.transform(df.actual)
+
+        # impute missing data for quality scores
+        for x in ['gatk_filtered_qual',  'mpileup_qual', 'varscan_snps_qual']:
+            imputer = Imputer(axis=1)
+            df[x] = imputer.fit_transform(df[x])[0]
+
+        # split into training / test data
+        df['is_train'] = np.random.uniform(0, 1, len(df)) <= .80
+        training_set = df[df['is_train'] == True]
+        test_set = df[df['is_train'] == False]
+
+        # train the classifier
+        classifier = RandomForestClassifier(n_jobs=-1)
+        classifier.fit(training_set[features], training_set['actual'])
+
+        # store classifier
+        joblib.dump(classifier, clf_filepath)
+
+        # get the original target classes
+        num_classes = len(set(df.actual))
+
+        # array(['A', 'C', 'G', 'T', 'X'], dtype=object
+        target_classes = encoder.inverse_transform(range(num_classes))
+
+        return (classifier, training_set, test_set, features, target_classes)
 
     def build_training_set(self, df):
         """Adds actual values to the end of the combined dataset"""
@@ -121,6 +254,8 @@ class EVE(object):
 
         df.to_csv(os.path.join(self.output_dir, "combined_training_set.csv"),
                   index_label='position')
+
+        return df
 
     def combine_vcfs(self, vcf_files):
         """Parses a collection of VCF files and creates a single matrix
@@ -196,7 +331,7 @@ class EVE(object):
                 combined_dict[qual_name][record.POS] = qual_score
 
         # Convert to a DataFrame
-        return DataFrame.from_dict(combined_dict)
+        return pandas.DataFrame.from_dict(combined_dict)
 
     def check_fasta_index(self):
         """Checks for a valid FASTA index and creates one if needed"""
@@ -346,6 +481,8 @@ class EVE(object):
                             help='Maximum number of threads to use')
         parser.add_argument('-t', '--training-set',
                             help='Run EVE in training mode')
+        parser.add_argument('--wgsim', action='store_true',
+                            help='Use wgsim output for training')
         parser.add_argument('-d', '--variant-detectors',
                             default='gatk,mpileup,varscan',
                             help=('Comma-separated list of the variant '
