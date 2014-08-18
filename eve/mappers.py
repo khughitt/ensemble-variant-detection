@@ -89,5 +89,10 @@ class BWAMemMapper(Mapper):
         logging.debug(cmd5)
         subprocess.call(cmd5, shell=True)
 
+        # Remove uneeded versions
+        os.unlink(self.outfile)
+        os.unlink(bam)
+        os.unlink(bam_sorted)
+
         return bam_sorted_rg
 

@@ -63,12 +63,16 @@ class EVE(object):
                     os.path.commonprefix([reads1, reads2])).strip("_")
         sam_filepath = "aln_%s.sam" % prefix
 
+        # filepath to final version
+        final_bam = sam_filepath.replace('.sam', '_sorted_RG.bam')
+
         # filepath for mapped reads
         mapped_reads = os.path.join(self.output_dir, 'mapped', sam_filepath)
+        mapped_reads_final = os.path.join(self.output_dir, 'mapped', final_bam)
 
         # load mapper
         if 'bam' not in self.args:
-            if not os.path.exists(mapped_reads):
+            if not os.path.exists(mapped_reads_final):
                 self.mapper = mappers.BWAMemMapper(self.args.fasta, reads1, reads2,
                                                 mapped_reads, self.args.num_threads)
             else:
