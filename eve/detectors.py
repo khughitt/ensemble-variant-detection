@@ -21,7 +21,8 @@ class VariantDetector(object):
     def parse_command_template(self, filepath):
         """Parses a configuration file containing options for the variant
            detector"""
-        return [x.strip() for x in open(filepath).readlines()]
+        with open(filepath) as fp:
+            return [x.strip() for x in fp.readlines()]
 
     def run(self):
         """Runs the given detectors"""

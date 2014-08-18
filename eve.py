@@ -98,10 +98,9 @@ class EVE(object):
             else:
                 vcf_files.append(output)
 
-        # normalize output from variant detectors and read in as either a NumPy
-        # matrix or pandas DataFrame
+        # normalize output from variant detectors and construct a pandas
+        # pandas DataFrame containing the results
         df = self.combine_vcfs(vcf_files)
-
 
         df.to_csv(os.path.join(self.output_dir, "combined.csv"),
                   index_label='position')
@@ -203,6 +202,8 @@ class EVE(object):
         """
         # Encode categorical features using one hot encoding
         features = []
+
+        import pdb; pdb.set_trace()
 
         for orig in ['gatk_filtered', 'mpileup', 'varscan_snps']:
             # replace NaNs to be consistent with target
@@ -530,8 +531,8 @@ class EVE(object):
                                   '.fastq, .fastq.gz, and .bam'))
         parser.add_argument('-f', '--fasta', required=True,
                             help='Location of genome sequence file to use.')
-        parser.add_argument('-g', '--gff', required=True,
-                            help='Location of GFF annotation file to use.')
+        #parser.add_argument('-g', '--gff', required=True,
+        #                    help='Location of GFF annotation file to use.')
         parser.add_argument('-m', '--mapper', default='bwa',
                             help='Mapper to use for read alignment')
         parser.add_argument('-n', '--num-threads', default='4',
@@ -553,8 +554,12 @@ class EVE(object):
         # validate input arguments
         if len(args.input_reads) > 2:
             raise IOError("Too many input arguments specified")
-        if not os.path.isfile(args.gff):
-            raise IOError("Invalid GFF filepath specified")
+        for x in args.input_reads:
+            if not os.path.exists(x):
+                raise IOError("Invalid input filepath specified")
+
+        #if not os.path.isfile(args.gff):
+        #    raise IOError("Invalid GFF filepath specified")
 
         # determine input type (FASTQ or BAM)
         if len(args.input_reads) == 1 and args.input_reads[0].endswith('.bam'):

@@ -48,24 +48,21 @@ Usage
 ## FASTQ input example
 
 ```
-python eve.py -g path/to/annotations.gff    \
-              -f path/to/genome.fasta       \
+python eve.py -f path/to/genome.fasta       \
               reads_1.fastq reads_2.fastq
 ```
 
 ## BAM input example
 
 ```
-python eve.py -g path/to/annotations.gff    \
-              -f path/to/genome.fasta       \
+python eve.py -f path/to/genome.fasta       \
               accepted_hits.bam
 ```
 
 ## Training example
 
 ```
-python eve.py -g path/to/annotations.gff    \
-              -f path/to/genome.fasta       \
+python eve.py -f path/to/genome.fasta       \
               --train=actual_snps.vcf       \
               --num-threads=32              \
               reads_1.fastq reads_2.fastq
@@ -74,8 +71,7 @@ python eve.py -g path/to/annotations.gff    \
 ## A more complex example:
 
 ```
-python eve.py --gff=path/to/annotations.gff            \
-              --fasta=path/to/genome.fasta             \
+python eve.py --fasta=path/to/genome.fasta             \
               --mapper=bowtie2                         \
               --variant-detectors=gatk,mpileup,varscan \
               --working-directory=/scratch/eve         \
